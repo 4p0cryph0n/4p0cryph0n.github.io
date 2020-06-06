@@ -49,8 +49,10 @@ int main()
     //Listen
     listen(sockfd, 0);
 
-    //Duplicate Standard File Descriptors
+    //Accept
     int stdfd = accept(sockfd, NULL, NULL);
+
+    //Duplicate Standard File Descriptors
     for (int i = 0; i < 3; i++)
     {
         dup2(stdfd, i);

@@ -18,7 +18,7 @@ minimal_mistakes_skin    : "dark" # "air", "aqua", "contrast", "dark", "dirt", "
 locale                   : "en-US"
 title                    : "4p0cryph0n"
 title_separator          : "-"
-subtitle                 : # site tagline that appears below site title in masthead
+subtitle                 : "New blog, who dis?" # site tagline that appears below site title in masthead
 name                     : "4p0cryph0n"
 description              : "New blog, who dis?"
 url                      : # the base hostname & protocol for your site e.g. "https://mmistakes.github.io"

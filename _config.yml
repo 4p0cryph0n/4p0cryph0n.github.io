@@ -16,10 +16,10 @@ minimal_mistakes_skin    : "default" # "air", "aqua", "contrast", "dark", "dirt"
 
 # Site Settings
 locale                   : "en-US"
-title                    : "4p0cryph0n's cave"
+title                    : "4p0cryph0n"
 title_separator          : "-"
 subtitle                 : # site tagline that appears below site title in masthead
-name                     : "4p0cryph0n
+name                     : "4p0cryph0n"
 description              : "New blog, who dis?"
 url                      : # the base hostname & protocol for your site e.g. "https://mmistakes.github.io"
 baseurl                  : # the subpath of your site, e.g. "/blog"

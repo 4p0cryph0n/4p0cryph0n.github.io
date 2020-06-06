@@ -1,7 +1,8 @@
 ---
 title:  "SLAE x86 Assignment 1: TCP Bind Shell"
 header:
-  teaser: "/assets/images/500x300.png"
+  teaser: "/assets/images/slae32.png"
+  teaser_home_page: true
 categories:
   - exploit dev
 classes: wide

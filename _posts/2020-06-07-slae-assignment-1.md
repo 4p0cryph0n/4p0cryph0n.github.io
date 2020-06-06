@@ -4,6 +4,7 @@ header:
   teaser: "/assets/images/500x300.png"
 categories:
   - exploit dev
+classes: wide
 tags:
   - exploit dev
   - slae

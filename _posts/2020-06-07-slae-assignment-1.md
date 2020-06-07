@@ -96,9 +96,19 @@ struct in_addr {
    uint32_t       s_addr;     /* address in network byte order */
 };
 ```
-Also note that we use ```htons``` and ```hton1``` functions to convert the address and the port to Big Endian (network byte order).
+Also note that we use ```htons``` and ```hton1``` functions to convert the address and port to Big Endian (network byte order).
 ```INADDR_ANY``` basically means that the socket will use all the interfaces available on the computer, basically takes the value of ```NULL```.
 
 #### Creating and Configuring the socket
+```c
+int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+```
+The ```socket()``` function takes three arguments, shown by the manpage exerpt below. These parameters be stored in the ```sockfd``` variable for later use in binding, listening and accepting:
 
- 
+```c
+#include <sys/types.h>          /* See NOTES */
+       #include <sys/socket.h>
+
+       int socket(int domain, int type, int protocol);
+```
+- ```int domain```: This variable is used to specify a protocol family which will be used for communication. In our case, we will be using IPv4 which is specified by ```AF_INET```.

@@ -113,4 +113,11 @@ The ```socket()``` function takes three arguments, shown by the manpage exerpt b
 ```
 - ```int domain```: This variable is used to specify a protocol family which will be used for communication. In our case, we will be using IPv4 which is specified by ```AF_INET```.
 - ```int type```: The type of socket. ```SOCK_STREAM``` in our case, which is used for two-way communication for TCP sockets.
-- ```int protocol```: Protocol to be used as a socket. We can also use 0 in our case.
+- ```int protocol```: Protocol to be used with the socket. We can also use 0 in our case.
+
+#### Binding the Socket
+```c
+//Bind Socket
+bind(sockfd, (struct sockaddr *)&addr, sizeof(addr));
+```
+This is where we assign an IP and port to the socket, using the ```sockfd``` variable from before, along with the address structure and the size of the address structure, which is supposed the be 16 bytes.

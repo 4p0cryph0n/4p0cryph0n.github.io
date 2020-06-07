@@ -74,7 +74,7 @@ addr.sin_family = AF_INET;
 addr.sin_port = htons(1337); //Port no.
 addr.sin_addr.s_addr = hton1(INADDR_ANY); //Use any interface to listen
 ```
-This part of code is responsible for defining the address family, port, and interface parameters, based on which we create our socket. Executing `man 7 ip` gives us a better understanding of the IP Address format:
+This part of the code is responsible for defining the address family, port, and interface parameters, based on which we create our socket. Executing `man 7 ip` gives us a better understanding of the IP Address format:
 
 ```
 Address format
@@ -112,3 +112,5 @@ The ```socket()``` function takes three arguments, shown by the manpage exerpt b
        int socket(int domain, int type, int protocol);
 ```
 - ```int domain```: This variable is used to specify a protocol family which will be used for communication. In our case, we will be using IPv4 which is specified by ```AF_INET```.
+- ```int type```: The type of socket. ```SOCK_STREAM``` in our case, which is used for two-way communication for TCP sockets.
+- ```int protocol```: Protocol to be used as a socket. We can also use 0 in our case.

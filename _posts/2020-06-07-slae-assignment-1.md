@@ -65,3 +65,33 @@ int main()
     return 0;  
 }
 ```
+
+#### Defining the Address Structure
+```c
+//Defining Address Structure
+struct sockaddr_in addr;
+addr.sin_family = AF_INET;
+addr.sin_port = htons(1337); //Port no.
+addr.sin_addr.s_addr = hton1(INADDR_ANY); //Use any interface to listen
+```
+This part of code is responsible for defining the address family, port, and interface parameters, based on which we create our socket. Executing ```man 7 ip``` gives us a better understanding of the IP Address format:
+
+```
+Address format
+       An IP socket address is defined as a combination of an IP interface  address  and  a
+       16-bit  port  number.   The basic IP protocol does not supply port numbers, they are
+       implemented by higher level protocols  like  udp(7)  and  tcp(7).   On  raw  sockets
+       sin_port is set to the IP protocol.
+```
+```c
+struct sockaddr_in {
+sa_family_t    sin_family; /* address family: AF_INET */
+in_port_t      sin_port;   /* port in network byte order */
+struct in_addr sin_addr;   /* internet address */
+};
+
+/* Internet address. */
+struct in_addr {
+uint32_t       s_addr;     /* address in network byte order */
+};
+```

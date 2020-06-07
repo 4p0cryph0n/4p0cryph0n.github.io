@@ -74,7 +74,7 @@ addr.sin_family = AF_INET;
 addr.sin_port = htons(1337); //Port no.
 addr.sin_addr.s_addr = hton1(INADDR_ANY); //Use any interface to listen
 ```
-This part of code is responsible for defining the address family, port, and interface parameters, based on which we create our socket. Executing ```man 7 ip``` gives us a better understanding of the IP Address format:
+This part of code is responsible for defining the address family, port, and interface parameters, based on which we create our socket. Executing `man 7 ip` gives us a better understanding of the IP Address format:
 
 ```
 Address format
@@ -83,15 +83,22 @@ Address format
        implemented by higher level protocols  like  udp(7)  and  tcp(7).   On  raw  sockets
        sin_port is set to the IP protocol.
 ```
+
 ```c
 struct sockaddr_in {
-sa_family_t    sin_family; /* address family: AF_INET */
-in_port_t      sin_port;   /* port in network byte order */
-struct in_addr sin_addr;   /* internet address */
+   sa_family_t    sin_family; /* address family: AF_INET */
+   in_port_t      sin_port;   /* port in network byte order */
+   struct in_addr sin_addr;   /* internet address */
 };
 
 /* Internet address. */
 struct in_addr {
-uint32_t       s_addr;     /* address in network byte order */
+   uint32_t       s_addr;     /* address in network byte order */
 };
 ```
+Also note that we use ```htons``` and ```hton1``` functions to convert the address and the port to Big Endian (network byte order).
+```INADDR_ANY``` basically means that the socket will use all the interfaces available on the computer, basically takes the value of ```NULL```.
+
+#### Creating and Configuring the socket
+
+ 

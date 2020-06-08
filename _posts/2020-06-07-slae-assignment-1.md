@@ -170,3 +170,28 @@ pwd
 /home/kali/Desktop/SLAE_Practice/SLAEx86_Assignments/ass1
 ```
 Now  that we know the structure of our program, let's start writing the assembly version!
+
+## Assembly Time! ##
+Let's start off by gathering our syscall numbers. These are stored in ```/usr/include/linux/net.h```. The ones that we need are:
+```
+#define SYS_SOCKET      1               /* sys_socket(2)                */
+#define SYS_BIND        2               /* sys_bind(2)                  */
+#define SYS_CONNECT     3               /* sys_connect(2)               */
+#define SYS_LISTEN      4               /* sys_listen(2)                */
+#define SYS_ACCEPT      5               /* sys_accept(2)                */
+```
+Now, we will need to find the identifiers for the ```sockfd``` arguments:
+- ```AF_INET```: Found in ```/usr/include/bits/socket.h```:
+```
+#define PF_INET         2       /* IP protocol family.  */
+#define AF_INET         PF_INET
+```
+- ```SOCK_STREAM```: Found in ```/usr/include/bits/socket_type.h```:
+```
+SOCK_STREAM = 1, /* Sequenced, reliable, connection-based byte streams.  */
+```
+- ```int protocol```: Found in ```/usr/include/linux/in.h```:
+```
+IPPROTO_IP = 0, /* Dummy protocol for TCP */
+```
+Perfect. Let's begin writing the code.

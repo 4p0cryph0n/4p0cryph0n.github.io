@@ -172,7 +172,7 @@ pwd
 Now  that we know the structure of our program, let's start writing the assembly version!
 
 ## Assembly Time! ##
-Note that in order to make a call like ```bind```, ```accept````, ```listen```, etc, we will need to use the ```int socketcall()``` syscall, which has the syscall number 102, or ```0x66``` in hex. It takes the following arguments:
+Note that in order to make a call like ```bind```, ```accept```, ```listen```, etc, we will need to use the ```int socketcall()``` syscall, which has the syscall number 102, or ```0x66``` in hex. It takes the following arguments:
 
 ```int socketcall(int call, unsigned long *args);```
 
@@ -215,10 +215,10 @@ mov al, 0x66
 inc ebx           ;ebx=1
 push edx          ;0
 push ebx          ;1
-push 0x2		      ;2
-mov ecx, esp		  ;pointer to args
-int 0x80		      ;syscall
-mov esi, eax		  ;sockfd
+push 0x2          ;2
+mov ecx, esp      ;pointer to args
+int 0x80          ;syscall
+mov esi, eax      ;sockfd
 ```
 Keep in mind that as the stack grows downwards, we push the arguments in reverse order. Here, we use the previously found ```sockfd``` identifiers:
 - 2: ```AF_INET```

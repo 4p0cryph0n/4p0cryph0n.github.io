@@ -172,7 +172,11 @@ pwd
 Now  that we know the structure of our program, let's start writing the assembly version!
 
 ## Assembly Time! ##
-Let's start off by gathering our syscall numbers. These are stored in ```/usr/include/linux/net.h```. The ones that we need are:
+Note that in order to make a call like ```bind```, ```accept````, ```listen````, etc, we will need to use the ```int socketcall()``` syscall, which has the syscall number 102, or ```0x66``` in hex. It takes the following arguments:
+
+```int socketcall(int call, unsigned long *args);```
+
+Let's start off by gathering the call numbers. These are stored in ```/usr/include/linux/net.h```. The ones that we need are:
 ```
 #define SYS_SOCKET      1               /* sys_socket(2)                */
 #define SYS_BIND        2               /* sys_bind(2)                  */
@@ -195,3 +199,27 @@ SOCK_STREAM = 1, /* Sequenced, reliable, connection-based byte streams.  */
 IPPROTO_IP = 0, /* Dummy protocol for TCP */
 ```
 Perfect. Let's begin writing the code.
+
+We start off by zeroing the registers using the ```xor``` instruction. Each register will now have the value of ```0x00000000```, which may prevent crashes while testing out the shellcode.
+```nasm
+xor eax, eax
+xor ebx, ebx
+xor ecx, ecx
+cdq          ;clears edx
+```
+Let's create the socket now. Now the way in which ```socketcall()``` works is, the EBX register takes the call number, and ECX takes a pointer to the arguments of that call.
+```nasm
+; create socket s=socket(2,1,0)
+	mov al, 0x66
+	inc ebx			     ;ebx=1
+	push edx		     ;0
+	push ebx         ;1
+	push 0x2		     ;2
+	mov ecx, esp		 ;pointer to args
+	int 0x80		     ;syscall
+	mov esi, eax		 ;sockfd
+```
+Keep in mind that as the stack grows downwards, we push the arguments in reverse order. Here, we use the previously found ```sockfd``` identifiers:
+- 2: ```AF_INET```
+- 1: ```SOCK_STREAM```
+- 0: ```IPPROTO_IP```

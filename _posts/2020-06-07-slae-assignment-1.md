@@ -228,7 +228,7 @@ A pointer to these arguments will then be stored in ecx, and the syscall will th
 
 Now we will create the address structure and call the ```bind()``` function.
 ```nasm
-; create addr struc and bind bind(s, 2,port,0, 16)
+; create addr struc and bind(s, 2,port,0, 16)
 mov al, 0x66
 inc ebx          ;ebx=2
 push edx         ;0
@@ -241,3 +241,6 @@ push esi         ;stockfd
 mov ecx, esp     ;pointer to args
 int 0x80         ;syscall
 ```
+This time, we increment (```inc```) ebx by 1, which means that now it has the value of 2, which is an identifier for the ```bind()``` call. We start by pushing 0 (which is stored in ebx) to the top of the stack, corresponding to the dummy protocol. This is followed by pushing the port number, and the value of 2, which corresponds to ```AF_INET```, and then we store a pointer to these arguments in ecx. This makes up the address structure.
+
+Then we push the address structure length (16) onto the the stack, along with a pointer to the previous arguments for ```bind()```. The ```bind()``` function takes ```sockfd``` as its first argument, so we push the pointer to that (stored in esi from before) onto the stack. After that, we finally store a pointer to all arguments in ecx, and execute the syscall.

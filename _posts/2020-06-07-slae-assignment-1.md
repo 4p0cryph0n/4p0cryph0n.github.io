@@ -416,7 +416,7 @@ Linux kali 5.4.0-kali3-686-pae #1 SMP Debian 5.4.13-1kali1 (2020-01-20) i686 GNU
 ```
 Boom! it works :)
 
-### Customizable Port
+### Customisable Port
 In order to complete this requirement, I've written a very simple python wrapper script that replaces the port in the shellcode with the desired port. Keep in mind that this is extremely simple, and to make this script more useful, checks for port numbers can also be included, along with better length checks.
 
 ```python

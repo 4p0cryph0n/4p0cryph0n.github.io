@@ -398,6 +398,8 @@ main()
 ```
 Now lets compile it, and test it out:
 ```
+Terminal 1:
+
 $ gcc -fno-stack-protector -z execstack shellcode.c -o shellcode           
 shellcode.c:6:1: warning: return type defaults to ‘int’ [-Wimplicit-int]
     6 | main()
@@ -405,7 +407,7 @@ shellcode.c:6:1: warning: return type defaults to ‘int’ [-Wimplicit-int]
 $ ./shellcode
 Shellcode Length:  102
 
-In another terminal:
+Terminal 2:
 
 $ nc -nv 127.0.0.1 4443
 (UNKNOWN) [127.0.0.1] 4443 (?) open

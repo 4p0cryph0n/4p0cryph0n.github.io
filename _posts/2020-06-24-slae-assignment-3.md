@@ -61,6 +61,15 @@ So when a group of addresses is restricted, a flag is returned. This flag is the
 
 This variable will be incremented after each search, in order to switch memory regions when they are restricted. Keep in mind that this function searches through multiple addresses at the same time, looking for 16 bytes of continuous data at each region. This is what makes this method faster than its predecessor, which involves using the ```access()``` function.
 
-So what goes in ```ebx``` and ```edx``` do not concern us. ```ecx``` will take the address to search through. I don't feel the need to write a c prototype for this method, so I will be directly jumping to the assembly code.
+So what goes in ```ebx``` and ```edx``` does not concern us. ```ecx``` will take the address to search through. I don't feel the need to write a c prototype for this method, so I will be directly jumping to the assembly code.
 
 ### Aseembly time!
+We start off by gathering our syscall numbers:
+```
+#define __NR_sigaction 67
+```
+Now, we will need the value of our ```PAGE_SIZE``` variable. This is what we will store in ```ecx```, and keep incrementing:
+```
+$ getconf PAGE_SIZE
+4096
+```

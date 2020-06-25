@@ -84,10 +84,10 @@ _start:
 
 page_size:
 
- or cx, 0xfff     ;4096
-```
- Now, let's write a piece of code that checks for the ```EFAULT``` flag, and changes memory regions if that flag is returned:
- ```nasm
+ or cx, 0xfff     ;4095
+ ```
+Now, let's write a piece of code that checks for the ```EFAULT``` flag, and changes memory regions if that flag is returned:
+```nasm
  efault_check:
 
 	xor eax, eax    ;clearing eax

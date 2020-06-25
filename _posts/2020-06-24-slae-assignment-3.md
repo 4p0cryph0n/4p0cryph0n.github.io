@@ -43,4 +43,20 @@ This is a very simple representation of how it should work. However, there are a
 
 - In the VAS of a process, there are multiple branches of memory, which means that if we are searching through the whole VAS, we are bound to run into branches that we do not have the permission to access, which will trigger a segmentation fault (SIGSEGV signal). This will cause our executable to crash. Hence, we will need a process that looks for a particular flag that is triggered when trying to access a restricted memory location, and move on to the next branch in the case that it is in fact restricted. This will prevent us from trying to access locations that we cannot.
 
-- There are three (mainly two) methods that we can use to do this, each of which impact the size of the shellcode. [Skape's paper](http://www.hick.org/code/skape/papers/egghunt-shellcode.pdf) is a great read for understanding each method in depth.
+- There are three (mainly two functions) methods that we can use to do this, each of which impact the size of the shellcode. [Skape's paper](http://www.hick.org/code/skape/papers/egghunt-shellcode.pdf) is a great read for understanding each method in depth.
+
+Alright, now that we have a fair idea of how things should work, let's dive in!
+
+## Method 1: sigaction() ##
+The first method of writing an egghunter involves using the ```sigaction()``` function to scan through multiple address in memory at the same time, in order to determine which addresses are accessible and which are not. This method is by far the fastest and most efficient implementation of an x86 egghunter. It is the smallest in size too.
+
+```c
+#include <signal.h>
+
+      int sigaction(int signum, const struct sigaction *act,
+                    struct sigaction *oldact);
+```
+
+So when a group of addresses is restricted, a flag is returned. This flag is the ```EFAULT``` flag, and this is what our ```sigaction()``` function will look for. However, we will need to pass an argument through this function directly, which is the ```PAGE_SIZE``` variable, which helps us in setting the location of memory regions, in order to search through the VAS.
+
+This variable will be incremented after each search, in order to switch memory regions when it is restricted. Keep in mind that this function searches through multiple addresses at the same time, looking for 16 bytes of continuous data at each segment. This is what makes this method faster than its predecessor, which involves using the ```access()``` function.

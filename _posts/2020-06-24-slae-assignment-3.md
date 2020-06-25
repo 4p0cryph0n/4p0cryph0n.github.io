@@ -84,14 +84,16 @@ _start:
 
 page_size:
 
- or cx, 0xfff     ;4095
+ or cx, 0xfff     ;or with 4095
  ```
+We ```or``` with 4095 instead of directly storing 4096 so that we can avoid a ```NULL```. Hence, ```or``` with 4095 and increment by 1.
+
 Now, let's write a piece of code that checks for the ```EFAULT``` flag, and changes memory regions if that flag is returned:
 ```nasm
  efault_check:
 
 	xor eax, eax    ;clearing eax
-	inc ecx         ;memory region
+	inc ecx
 	mov al, 0x43    ;67 --> sigaction
 	int 0x80        ;syscall
 

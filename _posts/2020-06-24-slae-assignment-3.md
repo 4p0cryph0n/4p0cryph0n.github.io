@@ -47,8 +47,8 @@ This is a very simple representation of how it should work. However, there are a
 
 Alright, now that we have a fair idea of how things should work, let's dive in!
 
-## Method 1: sigaction() ##
-The first method of writing an egghunter involves using the ```sigaction()``` function to scan through multiple address in memory at the same time, in order to determine which addresses are accessible and which are not. This method is by far the fastest and most efficient implementation of an x86 egghunter. It is the smallest in size too.
+## Using sigaction() ##
+This method of writing an egghunter involves using the ```sigaction()``` function to scan through multiple address in memory at the same time, in order to determine which addresses are accessible and which are not. This method is by far the fastest and most efficient implementation of an x86 egghunter. It is the smallest in size too.
 
 ```c
 #include <signal.h>
@@ -57,6 +57,10 @@ The first method of writing an egghunter involves using the ```sigaction()``` fu
                     struct sigaction *oldact);
 ```
 
-So when a group of addresses is restricted, a flag is returned. This flag is the ```EFAULT``` flag, and this is what our ```sigaction()``` function will look for. However, we will need to pass an argument through this function directly, which is the ```PAGE_SIZE``` variable, which helps us in setting the location of memory regions, in order to search through the VAS.
+So when a group of addresses is restricted, a flag is returned. This flag is the ```EFAULT``` flag, and this is what our ```sigaction()``` function will look for. However, we will need to pass an argument through this function directly, which is the ```PAGE_SIZE``` variable, which helps us in setting the location of memory regions, in order to search through the VAS. This basically sets up the page alignment.
 
-This variable will be incremented after each search, in order to switch memory regions when it is restricted. Keep in mind that this function searches through multiple addresses at the same time, looking for 16 bytes of continuous data at each segment. This is what makes this method faster than its predecessor, which involves using the ```access()``` function.
+This variable will be incremented after each search, in order to switch memory regions when they are restricted. Keep in mind that this function searches through multiple addresses at the same time, looking for 16 bytes of continuous data at each region. This is what makes this method faster than its predecessor, which involves using the ```access()``` function.
+
+So what goes in ```ebx``` and ```edx``` do not concern us. ```ecx``` will take the address to search through. I don't feel the need to write a c prototype for this method, so I will be directly jumping to the assembly code.
+
+### Aseembly time!

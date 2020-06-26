@@ -54,4 +54,4 @@ for x in bytearray(execve):
 
 print encoded2
 ```
-This script will first check whether the length of the shellcode is odd or even, depending upon which it will add a ```NOP``` at the end. This is to help with encoding groups of bytes. Then, the encoding process starts, and is outputted in a format which is supported by nasm. I will manually be adding a byte at the end of this output, which will serve as a marker. This will tell our decoder stub when to stop. This byte will be ```\xde```.
+This script will first check whether the length of the shellcode is odd or even, depending upon which it will add a ```NOP``` at the end. This is to help with encoding groups of bytes. Then, the encoding process starts, and is outputted in a format which is supported by nasm. I will manually be adding a byte at the end of this output, which will serve as a marker. This will tell our decoder stub when to stop with the decoding. This byte will be ```\xde```.

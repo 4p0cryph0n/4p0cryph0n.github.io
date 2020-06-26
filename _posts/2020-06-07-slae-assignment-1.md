@@ -13,7 +13,7 @@ tags:
 
 Hey guys! Welcome to my first SLAE x86 Assignments post! This series of posts aims to fulfil the requirements of the SLAE x86 certification from Pentester Academy, while also making shellcoding easier to understand for people just starting out in the field of exploit development. Let's begin with assignment 1!
 
-## Understanding the objective ##
+## Understanding The Objective ##
 In order to effectively understand what the shellcode must do, it is a good idea to start off by breaking down the code's major working parts. The shellcode must do the following:
 
 - Creates and configures a socket

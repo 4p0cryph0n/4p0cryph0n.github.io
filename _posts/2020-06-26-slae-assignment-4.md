@@ -62,6 +62,7 @@ kali@kali ~/Desktop/SLAEx86_Assignments/assignment4 $ python encoder.py
 
 add \xde at the end
 ```
+### Assembly time!
 Okay so now we have our output. Let's write the decoder stub. The idea is to essentially skip the two bytes added, and eliminate them to arrive at our decoded shellcode:
 ```nasm
 ; SLAE Assignment 4: Custom Decoder (Linux/x86)

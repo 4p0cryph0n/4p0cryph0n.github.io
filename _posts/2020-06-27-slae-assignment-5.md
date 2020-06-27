@@ -144,7 +144,7 @@ End of assembler dump.
 ```
 So right off the bat, the disassembly is quite long. But we don't need to concern ourselves with every single instruction. A few notes can be taken:
 - There is an ```int 0x80``` instruction at ```0x00404047```. ```eax``` holds ```0x46``` which is the syscall number.
-- The ```push``` instructions at ```0x0040404f```, ```0x00404054``` and ```0x00404059``` look like our parameters, i.e. our username, password and shell.
+- The ```push``` instructions at ```0x0040404f```, ```0x00404054``` and ```0x00404059``` look like parameters.
 - Another ```int 0x80``` at ```0x00404063```, with syscall number ```0x5``` in ```eax``` and a pointer to our arguments in ```ebx```.
 - The ```call``` at ```0x00404066``` calls our final shellcode.
 
@@ -163,9 +163,50 @@ SYNOPSIS         top
 ```
 This function is responsible for making sure that this program runs as root. This explains the two 0s as the arguments in ```ecx``` and ```ebx```:
 ```nasm
-0x00404040 <+0>:     xor    ecx,ecx
-0x00404042 <+2>:     mov    ebx,ecx
-0x00404044 <+4>:     push   0x46
+0x00404040 <+0>:     xor    ecx,ecx     ;ecx=0
+0x00404042 <+2>:     mov    ebx,ecx     ;ebx=0
+0x00404044 <+4>:     push   0x46        ;70 --> setreuid()
 0x00404046 <+6>:     pop    eax
-0x00404047 <+7>:     int    0x80
+0x00404047 <+7>:     int    0x80        ;syscall
 ```    
+The second syscall with the number ```0x5``` is a call to the ```open()``` function:
+```
+$ cat /usr/include/i386-linux-gnu/asm/unistd_32.h
+#define __NR_open 5
+```
+This is probably created in order to setup the descriptors for editing ```/etc/passwd```. These are the arguments that it takes:
+```c
+SYNOPSIS         top
+       #include <sys/types.h>
+       #include <sys/stat.h>
+       #include <fcntl.h>
+
+       int open(const char *pathname, int flags);
+```
+So it takes a pointer to the filename, and access flags. These flags can be found in the ```fcntl.h``` header file. Keep in mind that these flags are in octal:
+```c
+#define O_ACCMODE	00000003
+#define O_RDONLY	00000000
+#define O_WRONLY	00000001
+#define O_RDWR		00000002
+#define O_CREAT		00000100
+#define O_EXCL		00000200
+#define O_NOCTTY	00000400
+#define O_TRUNC		00001000
+#define O_APPEND	00002000
+.. and so on
+```
+So ```ecx``` serves as our ```NULLs``` in order to null-terminate the string ```/etc//passwd```(starting at ```0x64777373```). Then, a pointer to that string is stored in ```ebx```. Then, the value of ```0x401```(2001 in octal) is stored in ```ecx```. which means that the ```O_APPEND``` and ```O_WRONLY``` flags are used. This means that the file is opened for write-only and appending.  
+```nasm
+0x00404049 <+9>:     push   0x5
+0x0040404b <+11>:    pop    eax           ;eax=0x5 --> open()
+0x0040404c <+12>:    xor    ecx,ecx   
+0x0040404e <+14>:    push   ecx           ;nulls
+0x0040404f <+15>:    push   0x64777373    ;/etc//passwd string null-terminated
+0x00404054 <+20>:    push   0x61702f2f
+0x00404059 <+25>:    push   0x6374652f
+0x0040405e <+30>:    mov    ebx,esp       ;pointer to string
+0x00404060 <+32>:    inc    ecx           ;ecx=0x1
+0x00404061 <+33>:    mov    ch,0x4        ;ecx=0x401 --> O_WRONLY and O_APPEND
+0x00404063 <+35>:    int    0x80          ;syscall
+```

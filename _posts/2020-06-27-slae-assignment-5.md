@@ -261,9 +261,13 @@ ECX: 0x40406b ("metasploit:Az/dIsj4p4IRc:0:0::/:/bin/sh\nY\213Q\374j\004Xj\001X"
    0x404099 <code+89>:  pop    eax
    0x40409a <code+90>:  int    0x80
 ```
-This is then pushed onto the stack:
+So, this is the part of the code that passes our parameters for ```write()```:
 ```nasm
-0x00404095 <+85>:    push   ecx
+0x404093 <code+83>:  pop    ecx                         ;username,passwd,shell
+0x404094 <code+84>:  mov    edx,DWORD PTR [ecx-0x4]     ;length
+0x404097 <code+87>:  push   0x4                          
+0x404099 <code+89>:  pop    eax                         ;eax=0x4 --> write()
+0x40409a <code+90>:  int    0x80                        ;syscall
 ```
 Then, the ```write()``` function is executed, which has a syscall number of ```0x4```:
 ```
@@ -277,12 +281,6 @@ SYNOPSIS         top
 
 ```
 So this takes the file descriptor as the first argument, data as the second, followed by the length of the data:
-
-```nasm
-0x00404097 <+87>:    push   0x4     
-0x00404099 <+89>:    pop    eax     ;eax=0x4 --> write()
-0x0040409a <+90>:    int    0x80    ;syscall
-```
 ```
 0x00404099 in code ()
 gdb-peda$ stepi

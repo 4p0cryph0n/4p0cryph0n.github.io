@@ -143,7 +143,7 @@ Dump of assembler code for function code:
 End of assembler dump.
 ```
 So right off the bat, the disassembly is quite long. But we don't need to concern ourselves with every single instruction. A few notes can be taken:
-- There is an ```int 0x80``` instruction at ```0x00404047```. ```eax``` holds ```0x46``` which is the syscall number. Let's check this out.
+- There is an ```int 0x80``` instruction at ```0x00404047```. ```eax``` holds ```0x46``` which is the syscall number.
 - The ```push``` instructions at ```0x0040404f```, ```0x00404054``` and ```0x00404059``` look like our parameters, i.e. our username, password and shell.
 - Another ```int 0x80``` at ```0x00404063```, with syscall number ```0x5``` in ```eax``` and a pointer to our arguments in ```ebx```.
 - The ```call``` at ```0x00404066``` calls our final shellcode.

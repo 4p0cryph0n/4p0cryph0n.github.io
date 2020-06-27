@@ -88,7 +88,7 @@ metasploit:Az/dIsj4p4IRc:0:0::/:/bin/sh
 ```
 So as you can see, a new user with the username ```metasploit``` is added. Let's now analyse how the shellcode works.
 
-## Analysis
+### Analysis
 Let's take this into ```gdb``` and disassemble the code:
 ```
 Breakpoint 1, 0x00404040 in code ()
@@ -147,3 +147,25 @@ So right off the bat, the disassembly is quite long. But we don't need to concer
 - The ```push``` instructions at ```0x0040404f```, ```0x00404054``` and ```0x00404059``` look like our parameters, i.e. our username, password and shell.
 - Another ```int 0x80``` at ```0x00404063```, with syscall number ```0x5``` in ```eax``` and a pointer to our arguments in ```ebx```.
 - The ```call``` at ```0x00404066``` calls our final shellcode.
+
+Alright, so let's start off by checking out the first ```int 0x80```, with the syscall number ```0x46```(70):
+```
+$ cat /usr/include/i386-linux-gnu/asm/unistd_32.h
+#define __NR_setreuid 70
+```
+So this is a call to the ```setreuid()``` function. It takes the following arguments:
+```c
+SYNOPSIS         top
+       #include <sys/types.h>
+       #include <unistd.h>
+
+       int setreuid(uid_t ruid, uid_t euid);
+```
+This function is responsible for making sure that this program runs as root. This explains the two 0s as the arguments in ```ecx``` and ```ebx```:
+```nasm
+0x00404040 <+0>:     xor    ecx,ecx
+0x00404042 <+2>:     mov    ebx,ecx
+0x00404044 <+4>:     push   0x46
+0x00404046 <+6>:     pop    eax
+0x00404047 <+7>:     int    0x80
+```    

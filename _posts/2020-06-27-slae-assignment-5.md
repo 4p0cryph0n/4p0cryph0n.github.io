@@ -245,7 +245,7 @@ EFLAGS: 0x202 (carry parity adjust zero sign trap INTERRUPT direction overflow)
 [------------------------------------------------------------------------------]
 Legend: code, data, rodata, value
 ```
-So from the upper half, we can gather that our username and password is stored at ```esp```, and after the ```call``` executes, it will be popped into ```ecx```:
+So from the upper half, we can gather that our username, password and shell parameter is stored at ```esp```, and after the ```call``` executes, it will be popped into ```ecx```:
 ```
 gdb-peda$ stepi
 [----------------------------------registers-----------------------------------]

@@ -245,7 +245,7 @@ EFLAGS: 0x202 (carry parity adjust zero sign trap INTERRUPT direction overflow)
 [------------------------------------------------------------------------------]
 Legend: code, data, rodata, value
 ```
-So from the upper half, we can gather that our username, password and shell parameter is stored at ```esp```, and after the ```call``` executes, it will be popped into ```ecx```:
+So from the upper half, we can gather that our username, password and shell parameters are stored at ```esp```, and after the ```call``` executes, it will be popped into ```ecx```:
 ```
 gdb-peda$ stepi
 [----------------------------------registers-----------------------------------]
@@ -304,3 +304,6 @@ Then finally, the ```exit()``` function is called, with the syscall number ```0x
 0x0040409e <+94>:    pop    eax       ;eax=0x1 --> exit()
 0x0040409f <+95>:    int    0x80      ;syscall
 ```
+
+## Shellcode 2: linux/x86/chmod ##
+Now let's have a look at a ```chmod``` shellcode. This shellcode helps in changing the permissions of a particular file, when supplied with a desired mode. Let's look at the basic options:

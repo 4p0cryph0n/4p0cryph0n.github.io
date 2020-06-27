@@ -196,7 +196,7 @@ So it takes a pointer to the filename, and access flags. These flags can be foun
 #define O_APPEND	00002000
 .. and so on
 ```
-So ```ecx``` serves as our ```NULLs``` in order to null-terminate the string ```/etc//passwd```(starting at ```0x64777373```). Then, a pointer to that string is stored in ```ebx```. Then, the value of ```0x401```(2001 in octal) is stored in ```ecx```. which means that the ```O_APPEND``` and ```O_WRONLY``` flags are used. This means that the file is opened for write-only and appending.  
+So ```ecx``` serves as our ```NULLs``` in order to null-terminate the string ```/etc//passwd```(starting at ```0x6374652f```). Then, a pointer to that string is stored in ```ebx```. Then, the value of ```0x401```(2001 in octal) is stored in ```ecx```. which means that the ```O_APPEND``` and ```O_WRONLY``` flags are used. This means that the file is opened for write-only and appending.  
 ```nasm
 0x00404049 <+9>:     push   0x5
 0x0040404b <+11>:    pop    eax           ;eax=0x5 --> open()

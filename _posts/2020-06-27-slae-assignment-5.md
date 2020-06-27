@@ -214,7 +214,7 @@ So ```ecx``` serves as our ```NULLs``` in order to null-terminate the string ```
 The ```xchng``` after the syscall switches the values stored in ```ebx``` and ```eax```. So ```eax``` has the pointer to our string and ```ebx``` has ```0x3```.
 
 In order to understand what that call at ```0x00404066``` does, I set a breakpoint at the address that it's calling, which is ```0x404093```:
-```nasm
+```
 gdb-peda$ c
 Continuing.
 [----------------------------------registers-----------------------------------]
@@ -246,23 +246,18 @@ EFLAGS: 0x202 (carry parity adjust zero sign trap INTERRUPT direction overflow)
 Legend: code, data, rodata, value
 ```
 So from the upper half, we can gather that our username and password is stored at ```esp```, and after the ```call``` executes, it will be popped into ```ecx```:
-```nasm
+```
 gdb-peda$ stepi
 [----------------------------------registers-----------------------------------]
 EAX: 0xbffff1ac ("/etc//passwd")
 EBX: 0xfffffff3
 ECX: 0x40406b ("metasploit:Az/dIsj4p4IRc:0:0::/:/bin/sh\nY\213Q\374j\004Xj\001X")
-EDX: 0x40201e --> 0x1b010000
-ESI: 0xb7fb8000 --> 0x1dfd6c
-EDI: 0xb7fb8000 --> 0x1dfd6c
-EBP: 0xbffff1d8 --> 0x0
-ESP: 0xbffff1ac ("/etc//passwd")
-EIP: 0x404094 --> 0x6afc518b
-EFLAGS: 0x202 (carry parity adjust zero sign trap INTERRUPT direction overflow)
+...
+
+...
 [-------------------------------------code-------------------------------------]
 => 0x404094 <code+84>:  mov    edx,DWORD PTR [ecx-0x4]
    0x404097 <code+87>:  push   0x4
    0x404099 <code+89>:  pop    eax
    0x40409a <code+90>:  int    0x80
 ```
-  

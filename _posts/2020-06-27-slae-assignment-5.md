@@ -264,6 +264,7 @@ ECX: 0x40406b ("metasploit:Az/dIsj4p4IRc:0:0::/:/bin/sh\nY\213Q\374j\004Xj\001X"
 This is then pushed onto the stack:
 ```nasm
 0x00404095 <+85>:    push   ecx
+```
 Then, the ```write()``` function is executed, which has a syscall number of ```0x4```:
 ```
 $ cat /usr/include/i386-linux-gnu/asm/unistd_32.h

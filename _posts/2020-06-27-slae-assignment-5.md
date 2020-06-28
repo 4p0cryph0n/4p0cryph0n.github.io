@@ -89,7 +89,7 @@ metasploit:Az/dIsj4p4IRc:0:0::/:/bin/sh
 So as you can see, a new user with the username ```metasploit``` is added. Let's now analyse how the shellcode works.
 
 ### Analysis
-Let's take this into ```gdb``` and disassemble the code:
+Let's take this into ```gdb``` and disassemble the code. Note that the breakpoint is set at the beginning of our shellcode (```break *&code```):
 ```nasm
 Breakpoint 1, 0x00404040 in code ()
 gdb-peda$ disas
@@ -363,7 +363,7 @@ $ ls -la | grep test.txt
 As you can see, the permissions have been changed to read and write for all users and groups, which basically translates to a ```chmod 666``` command. Now, let's understand how this works.
 
 ### Analysis
-Let's take this into ```gdb``` and obtain a disassembly:
+Let's take this into ```gdb``` and obtain a disassembly. Note that the breakpoint is set at the beginning of our shellcode (```break *&code```):
 ```nasm
 gdb-peda$ disas
 Dump of assembler code for function code:
@@ -386,3 +386,50 @@ Dump of assembler code for function code:
    0x00404061 <+33>:    add    BYTE PTR [eax],al
 End of assembler dump.
 ```
+Like before, let's take some quick notes:
+- ```eax``` intially holds the value of ```0xf```, used later for an ```int 0x80```.
+- The call at ```0x00404045``` is worth looking into.
+- There's a bunch of conditional jumps before the first syscall. It'll be better to set breakpoints and step in in order to understand these.
+
+Let's set a breakpoint at the ```int 0x80``` at ```0x0040405a```:
+```
+gdb-peda$ break *0x0040405a
+Breakpoint 2 at 0x40405a
+gdb-peda$ c
+Continuing.
+[----------------------------------registers-----------------------------------]
+EAX: 0xf
+EBX: 0x40404a ("test.txt")
+ECX: 0x1b6
+EDX: 0x0
+ESI: 0xb7fb8000 --> 0x1dfd6c
+EDI: 0xb7fb8000 --> 0x1dfd6c
+EBP: 0xbffff1d8 --> 0x0
+ESP: 0xbffff1b8 --> 0x0
+EIP: 0x40405a --> 0x16a80cd
+EFLAGS: 0x286 (carry PARITY adjust zero SIGN trap INTERRUPT direction overflow)
+[-------------------------------------code-------------------------------------]
+   0x404053 <code+19>:  pop    ebx
+   0x404054 <code+20>:  push   0x1b6
+   0x404059 <code+25>:  pop    ecx
+=> 0x40405a <code+26>:  int    0x80
+   0x40405c <code+28>:  push   0x1
+   0x40405e <code+30>:  pop    eax
+   0x40405f <code+31>:  int    0x80
+   0x404061 <code+33>:  add    BYTE PTR [eax],al
+[------------------------------------stack-------------------------------------]
+```
+So this is right before our first syscall. From here, we can understand what we're calling with what parameters. ```0xf``` in decimal is 15, which corresponds to the ```chmod``` syscall:
+```
+$ cat /usr/include/i386-linux-gnu/asm/unistd_32.h
+#define __NR_chmod 15
+```
+```c
+SYNOPSIS         top
+       #include <sys/stat.h>
+
+       int chmod(const char *pathname, mode_t mode);
+```
+It takes two arguments, file path and mode. We can see this in our registers above, ```ebx``` holds a pointer to our filename and ```ecx``` holds ```0x1b6``` which is 438 in decimal, which is 666 in octal.
+
+The next part of our shellcode is basically our ```exit()``` function.

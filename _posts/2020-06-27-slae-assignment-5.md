@@ -606,6 +606,7 @@ SOCK_STREAM = 1, /* Sequenced, reliable, connection-based byte streams.  */
 ```c
 IPPROTO_IP = 0, /* Dummy protocol for TCP */
 ```
+
 The ```sockfd``` returned is then stored in ```ebx```:
 ```nasm
 0x0040404f <+15>:    xchg   ebx,eax

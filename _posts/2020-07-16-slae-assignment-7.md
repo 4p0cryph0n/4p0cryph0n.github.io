@@ -23,6 +23,10 @@ Let's dive right in!
 ### Crypter Script
 So this script basically generates a random key of 16 bytes. Then, encrypts the shellcode, decrypts it, and writes it to the ```shellcode.c``` file. This is then compiled and executed:
 ```python
+# SLAE Assignment 7: Python Crypter Script
+# Author:  4p0cryph0n
+# Website: https://4p0cryph0n.github.io/
+
 #!/usr/bin/python
 
 from pytea import TEA

@@ -140,7 +140,7 @@ $ stat -c %a /etc/shadow
 The new length is 56 bytes, which is roughly a 70 percent increase in size.
 
 ### Shellcode 2: [Tiny Read File Shellcode - C Language - Linux/x86](http://shell-storm.org/shellcode/files/shellcode-842.php)
-This shellcode read and output 4096 bytes from a given file, which in our current case is ```/etc/passwd```. Written by geyslan, here is the original shellcode, with an initial size of 51 bytes:
+This shellcode will read and output 4096 bytes from a given file, which in our current case is ```/etc/passwd```. Written by geyslan, here is the original shellcode, with an initial size of 51 bytes:
 ```c
 #include <stdio.h>
 #include <string.h>
@@ -382,7 +382,7 @@ shellcode.c:6:1: warning: return type defaults to ‘int’ [-Wimplicit-int]
 $ ./shellcode
 Shellcode Length:  7
 ```
-The new length is 7 bytes, which is roughly a 13 percent reduce in size.
+The new length is 7 bytes, which is roughly a 13 percent reduction in size.
 
 This blog post has been created for completing the requirements of the SecurityTube Linux Assembly Expert certification.
 

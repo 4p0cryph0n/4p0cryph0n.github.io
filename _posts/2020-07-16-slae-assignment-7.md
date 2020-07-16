@@ -14,7 +14,7 @@ tags:
 Hey guys! Welcome back! In this post, we will look at the last assignment of SLAE x86. Let's dive right in!
 
 ## Understanding The Objective ##
-So what are crypters? Crypters are tools that can be used to encrypted sets of data, in order to make it hard or nearly impossible for AVs to detect the content of that data. In our case, we will be building a crypter which will help us encrypt our ```execve-stack``` shellcode.
+So what are crypters? Crypters are tools that can be used to encrypt sets of data, in order to make it hard or nearly impossible for AVs to detect the content of that data. In our case, we will be building a crypter which will help us encrypt our ```execve-stack``` shellcode.
 
 Instead of going with the conventional AES symmetric algorithm, I wanted to try something else. Hence, I will be using the ```PyTEA``` library in Python for this assignment. While this is much simpler, this method has it's own drawbacks. These can be found [here.](https://en.wikipedia.org/wiki/Tiny_Encryption_Algorithm#Properties) In essence, the Tiny Encryption Algorithm uses a 128 bit key in order to encrypt.
 

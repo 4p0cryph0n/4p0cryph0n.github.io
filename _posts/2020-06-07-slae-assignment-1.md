@@ -76,7 +76,7 @@ addr.sin_addr.s_addr = hton1(INADDR_ANY); //Use any interface to listen
 ```
 This part of the code is responsible for defining the address family, port, and interface parameters, based on which we create our socket. Executing `man 7 ip` gives us a better understanding of the IP Address format:
 
-```
+```bash
 Address format
        An IP socket address is defined as a combination of an IP interface  address  and  a
        16-bit  port  number.   The basic IP protocol does not supply port numbers, they are

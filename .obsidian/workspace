@@ -6,9 +6,25 @@
       {
         "id": "9191ecb2e7e8e9e2",
         "type": "leaf",
+        "dimension": 52.68956578094621,
         "state": {
-          "type": "empty",
-          "state": {}
+          "type": "markdown",
+          "state": {
+            "file": "_posts/2022-07-12-Malware-Analysis-Eternity-Stealer.md",
+            "mode": "source"
+          }
+        }
+      },
+      {
+        "id": "05f7763cebe3e5d9",
+        "type": "leaf",
+        "dimension": 47.310434219053796,
+        "state": {
+          "type": "markdown",
+          "state": {
+            "file": "_posts/2022-07-12-Malware-Analysis-Eternity-Stealer.md",
+            "mode": "preview"
+          }
         }
       }
     ],
@@ -49,7 +65,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 317
   },
   "right": {
     "id": "9c0c7ec6e735f7c3",
@@ -65,6 +81,7 @@
             "state": {
               "type": "backlink",
               "state": {
+                "file": "_posts/2022-07-12-Malware-Analysis-Eternity-Stealer.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -84,8 +101,10 @@
   },
   "active": "9191ecb2e7e8e9e2",
   "lastOpenFiles": [
-    "_posts/2020-06-07-slae-assignment-1.md",
+    "_posts/2022-07-12-Malware-Analysis-Eternity-Stealer.md",
+    "_posts/2020-07-16-slae-assignment-7.md",
     "_posts/2020-07-02-slae-assignment-6.md",
+    "_posts/2020-06-07-slae-assignment-1.md",
     "_posts/2020-02-15-reverse-engineering-and-exploit-dev-chapt-3.md"
   ]
 }

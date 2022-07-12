@@ -4,27 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "26c551caf676cc44",
+        "id": "9191ecb2e7e8e9e2",
         "type": "leaf",
-        "dimension": 47.56410256410256,
         "state": {
-          "type": "markdown",
-          "state": {
-            "file": "_posts/2020-06-07-slae-assignment-1.md",
-            "mode": "source"
-          }
-        }
-      },
-      {
-        "id": "84c16d9589efcca3",
-        "type": "leaf",
-        "dimension": 52.43589743589744,
-        "state": {
-          "type": "markdown",
-          "state": {
-            "file": "_posts/2020-06-07-slae-assignment-1.md",
-            "mode": "preview"
-          }
+          "type": "empty",
+          "state": {}
         }
       }
     ],
@@ -81,7 +65,6 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "_posts/2020-06-07-slae-assignment-1.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -99,7 +82,7 @@
     "width": 300,
     "collapsed": true
   },
-  "active": "26c551caf676cc44",
+  "active": "9191ecb2e7e8e9e2",
   "lastOpenFiles": [
     "_posts/2020-06-07-slae-assignment-1.md",
     "_posts/2020-07-02-slae-assignment-6.md",

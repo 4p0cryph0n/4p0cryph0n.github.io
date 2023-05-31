@@ -101,6 +101,7 @@ author:
   github           : "4p0cryph0n"
   twitter          : "4p0cryph0n"
   instagram        : "__4p0cryph0n__"
+  LinkedIn         : "mehardeep-singh-s-11a76b11a"
 
 # Site Footer
 footer:
@@ -123,7 +124,9 @@ footer:
     - label: "Instagram"
       icon: "fab fa-fw fa-instagram"
       # url:
-
+    - label: "LinkedIn"
+      icon: "fav fa-fw fa-linkedin
+      url:  "https://www.linkedin.com/in/"
 
 # Reading Files
 include:

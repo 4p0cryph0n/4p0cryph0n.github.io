@@ -100,7 +100,7 @@ author:
   email            : "mehardeepsawhney@gmail.com"
   github           : "4p0cryph0n"
   twitter          : "4p0cryph0n"
-  instagram        : "__4p0cryph0n__"
+#  instagram        : "__4p0cryph0n__"
   LinkedIn         : "mehardeep-singh-s-11a76b11a"
 
 # Site Footer
@@ -121,8 +121,8 @@ footer:
     - label: "Bitbucket"
       icon: "fab fa-fw fa-bitbucket"
       # url:
-    - label: "Instagram"
-      icon: "fab fa-fw fa-instagram"
+ #   - label: "Instagram"
+ #     icon: "fab fa-fw fa-instagram"
       # url:
     - label: "LinkedIn"
       icon: "fav fa-fw fa-linkedin"

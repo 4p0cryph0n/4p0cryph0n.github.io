@@ -125,7 +125,7 @@ footer:
       icon: "fab fa-fw fa-instagram"
       # url:
     - label: "LinkedIn"
-      icon: "fav fa-fw fa-linkedin
+      icon: "fav fa-fw fa-linkedin"
       url:  "https://www.linkedin.com/in/"
 
 # Reading Files

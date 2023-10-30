@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "_posts/2023-05-27-windows-malware-development-1.md",
+                "file": "_posts/2023-10-30-windows-malware-development-2.md",
                 "mode": "source",
                 "source": false
               }
@@ -22,17 +22,17 @@
         ]
       },
       {
-        "id": "11e8099f16fb3167",
+        "id": "cfa2ce431b6ae0ce",
         "type": "tabs",
         "children": [
           {
-            "id": "0d8af5723811e5e5",
+            "id": "229035fde4e306ec",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "_posts/2023-05-27-windows-malware-development-1.md",
-                "mode": "preview",
+                "file": "_posts/2023-10-30-windows-malware-development-2.md",
+                "mode": "source",
                 "source": false
               }
             }
@@ -103,7 +103,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "_posts/2023-05-27-windows-malware-development-1.md",
+                "file": "_posts/2023-10-30-windows-malware-development-2.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -132,13 +132,14 @@
   },
   "active": "9191ecb2e7e8e9e2",
   "lastOpenFiles": [
-    "assets/signature.png.md",
     "_posts/2023-05-27-windows-malware-development-1.md",
+    "_posts/2023-10-30-windows-malware-development-2.md",
+    "_posts/2020-07-02-slae-assignment-6.md",
+    "_posts/2020-07-16-slae-assignment-7.md",
+    "assets/signature.png.md",
     "assets/images/signature.png",
     "assets/images/DOS_stub.png",
     "_posts/2022-07-12-Malware-Analysis-Eternity-Stealer.md",
-    "_posts/2020-07-16-slae-assignment-7.md",
-    "_posts/2020-07-02-slae-assignment-6.md",
     "_posts/2020-06-07-slae-assignment-1.md",
     "_posts/2020-02-15-reverse-engineering-and-exploit-dev-chapt-3.md"
   ]

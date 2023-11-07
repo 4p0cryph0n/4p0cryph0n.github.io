@@ -14,7 +14,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "_posts/2023-05-27-windows-malware-development-3.md",
+                "file": "_posts/2023-10-30-windows-malware-development-2.md",
                 "mode": "source",
                 "source": false
               }
@@ -105,7 +105,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "_posts/2023-05-27-windows-malware-development-3.md",
+                "file": "_posts/2023-10-30-windows-malware-development-2.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -134,8 +134,8 @@
   },
   "active": "9191ecb2e7e8e9e2",
   "lastOpenFiles": [
-    "_posts/2023-10-30-windows-malware-development-2.md",
     "_posts/2023-05-27-windows-malware-development-3.md",
+    "_posts/2023-10-30-windows-malware-development-2.md",
     "_posts/2023-05-27-windows-malware-development-1.md",
     "assets/images/execution.png",
     "assets/images/virtual_protect.png",

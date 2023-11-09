@@ -6,7 +6,7 @@
       {
         "id": "e7c0bb47e5ae0b08",
         "type": "tabs",
-        "dimension": 57.05794947994056,
+        "dimension": 56.01783060921248,
         "children": [
           {
             "id": "9191ecb2e7e8e9e2",
@@ -25,7 +25,7 @@
       {
         "id": "cfa2ce431b6ae0ce",
         "type": "tabs",
-        "dimension": 42.94205052005943,
+        "dimension": 43.98216939078752,
         "children": [
           {
             "id": "229035fde4e306ec",
@@ -136,6 +136,7 @@
   "lastOpenFiles": [
     "_posts/2023-10-30-windows-malware-development-2.md",
     "_posts/2023-10-30-windows-malware-development-4.md",
+    "assets/images/rcdata.png",
     "_posts/2023-10-30-windows-malware-development-3.md",
     "assets/images/data_sec.png",
     "assets/images/jmp_data.png",

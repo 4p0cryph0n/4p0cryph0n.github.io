@@ -6,7 +6,6 @@
       {
         "id": "e7c0bb47e5ae0b08",
         "type": "tabs",
-        "dimension": 56.01783060921248,
         "children": [
           {
             "id": "9191ecb2e7e8e9e2",
@@ -15,25 +14,6 @@
               "type": "markdown",
               "state": {
                 "file": "_posts/2023-10-30-windows-malware-development-4.md",
-                "mode": "source",
-                "source": false
-              }
-            }
-          }
-        ]
-      },
-      {
-        "id": "cfa2ce431b6ae0ce",
-        "type": "tabs",
-        "dimension": 43.98216939078752,
-        "children": [
-          {
-            "id": "229035fde4e306ec",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "_posts/2023-10-30-windows-malware-development-2.md",
                 "mode": "source",
                 "source": false
               }
@@ -89,7 +69,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 317
+    "width": 200,
+    "collapsed": true
   },
   "right": {
     "id": "9c0c7ec6e735f7c3",

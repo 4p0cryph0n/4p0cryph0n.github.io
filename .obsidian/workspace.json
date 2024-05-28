@@ -8,12 +8,24 @@
         "type": "tabs",
         "children": [
           {
-            "id": "9191ecb2e7e8e9e2",
+            "id": "92bf35c902ae8d92",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
                 "file": "_posts/2024-04-12-windows-malware-development-5.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "516cb50fb1f4803a",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "_posts/2023-10-30-windows-malware-development-4.md",
                 "mode": "source",
                 "source": false
               }
@@ -112,15 +124,17 @@
       "markdown-importer:Open format converter": false
     }
   },
-  "active": "9191ecb2e7e8e9e2",
+  "active": "92bf35c902ae8d92",
   "lastOpenFiles": [
+    "_posts/2023-05-27-windows-malware-development-1.md",
+    "_posts/2023-10-30-windows-malware-development-2.md",
+    "_posts/2023-10-30-windows-malware-development-3.md",
     "_posts/2023-10-30-windows-malware-development-4.md",
     "_posts/2024-04-12-windows-malware-development-5.md",
+    "assets/images/rc42.png",
+    "assets/images/rc41.png",
     "_posts/2024-04-12-windows-malware-development-5.md.md",
     "Untitled.md",
-    "_posts/2023-10-30-windows-malware-development-3.md",
-    "_posts/2023-10-30-windows-malware-development-2.md",
-    "_posts/2023-05-27-windows-malware-development-1.md",
     "_posts/2024-04-12-windows-malware-development-5.md.txt",
     "_posts/2024-04-12-windows-malware-development-5.txt",
     "_posts/New Text Document.txt",
@@ -138,9 +152,7 @@
     "assets/images/vs_Debug.png",
     "assets/images/rcdata.png",
     "assets/images/data_sec.png",
-    "assets/images/jmp_data.png",
     "_posts/2023-05-27-windows-malware-development-3.md",
-    "assets/images/execution.png",
     "assets/signature.png.md",
     "_posts/2022-07-12-Malware-Analysis-Eternity-Stealer.md",
     "_posts/2020-06-07-slae-assignment-1.md",

@@ -75,3 +75,7 @@ PORT     STATE SERVICE
 Nmap done: 1 IP address (1 host up) scanned in 7.85 seconds
 ```
 
+From the output, we can see that the service `iec-104` is running on port `2404` of our Conpot instance. But this only confirms that the service is running. In order to interact with it, we need to go through substations that are connected to the master.
+
+A substation is known as an Application Service Data Unit (ASDU), which is essentially a Remote Terminal Unit (RTU) that is used to communicate with the master. Each ASDU has a common address, known as an ASDU Common Address which is a unique identifier.
+

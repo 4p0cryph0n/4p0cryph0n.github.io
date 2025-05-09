@@ -1,6 +1,8 @@
 ---
-title: OT Security - IEC104 Attack and Defend
-header: '{"teaser":"/assets/images/iec104.png","teaser_home_page":true}'
+title: "OT Security: IEC 104 Attack and Defend"
+header:
+  teaser: /assets/images/iec104.png
+  teaser_home_page: true
 categories:
   - OT Security
 classes: wide

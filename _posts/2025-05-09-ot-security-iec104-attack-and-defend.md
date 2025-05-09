@@ -23,6 +23,8 @@ Sandworm utilized custom OT/ICS malware, namely INDUSTROYER.V2, to perform targe
 
 This case, among many, shows the rapid evolution of OT threats and how they fit into the bigger pictures such as cyberwarfare. It also highlights the importance of shifting our glance as an industry to securing these OT/ICS systems in order to ensure that critical infrastructure stays secure and provides continuous services during wars and other disturbances.
 
+![Source: Mandiant Blog](/assets/images/mandiant_ot.png)
+
 ## IEC 104 - Overview
 
 IEC 104 (IEC-60870-5-104) is a communication protocol that is utilized by many types of OT/ICS and SCADA systems especially those that are a part of energy and power infrastructure. 

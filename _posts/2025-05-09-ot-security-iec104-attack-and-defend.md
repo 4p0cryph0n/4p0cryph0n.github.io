@@ -32,3 +32,26 @@ IEC 104 (IEC-60870-5-104) is a communication protocol that is utilized by many t
 It facilitates remote control and monitoring over TCP/IP and is usually used for connecting control centers (client/master) to RTU/IEDs and substations (server/slave). Using this protocol, several data points such as breaker status, tank levels, etc. can be monitored, ingested, and controlled.
 
 ## Target Lab Setup
+
+To simulate an IEC 104 setup, I will be using an open-source OT security lab project called [Conpot](http://conpot.org/) along with Kali Linux. Conpot is a OT systems honeypot that contains multiple templates for security templates, one of which is the IEC 104 template. 
+
+Conpot can be installed using Docker as such:
+
+```bash
+docker pull conpot/conpot 
+```
+
+And can be run using the command:
+
+```bash
+docker run -it -p 80:80 -p 102:102 -p 502:502 -p 161:161/udp --network=bridge honeynet/conpot:latest /bin/sh
+
+```
+
+The Conpot binary is in `.local/bin`. To run it with the IEC 104 template, we do:
+
+```bash
+~/.local/bin $ ./conpot -f -t IEC104
+```
+
+This will spin up a good IEC 104 testing environment with one substation.

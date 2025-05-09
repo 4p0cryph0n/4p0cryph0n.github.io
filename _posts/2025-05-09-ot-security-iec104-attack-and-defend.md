@@ -45,7 +45,6 @@ And can be run using the command:
 
 ```bash
 docker run -it -p 80:80 -p 102:102 -p 502:502 -p 161:161/udp --network=bridge honeynet/conpot:latest /bin/sh
-
 ```
 
 The Conpot binary is in `.local/bin`. To run it with the IEC 104 template, we do:
@@ -55,3 +54,24 @@ The Conpot binary is in `.local/bin`. To run it with the IEC 104 template, we do
 ```
 
 This will spin up a good IEC 104 testing environment with one substation.
+
+## Red Team - Attack
+
+Let's go over the Red Team part of this exercise. Our main objective would be to compromise the substation and tamper with critical resources by sending malicious control commands in order to cause cyber/physical damage.
+
+### Target Discovery
+
+First, we will conduct some reconnaissance on the target IP. We will be using `nmap` for this, and will be using the flags `-Pn` and `-p-` to skip the ping check and scan all ports.
+
+```bash
+kali:iec104_testing:% nmap 172.17.0.2 -Pn -p- 
+Starting Nmap 7.94 ( https://nmap.org ) at 2025-05-09 08:13 EDT
+Nmap scan report for 172.17.0.2
+Host is up (0.000034s latency).
+Not shown: 65534 closed tcp ports (conn-refused)
+PORT     STATE SERVICE
+2404/tcp open  iec-104
+
+Nmap done: 1 IP address (1 host up) scanned in 7.85 seconds
+```
+

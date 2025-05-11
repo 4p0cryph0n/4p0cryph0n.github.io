@@ -98,7 +98,8 @@ Nmap done: 1 IP address (1 host up) scanned in 8.78 seconds
 
 The output shows one ASDU address connected to the master, which is `7720` and will come in handy during further stages of the attack. One more notable observation is the number of information objects.
 
->[! IMPORTANT] An Information Object is a data point that is contained within an ASDU. Information Objects relay a variety of information from the master, for example, breaker status, sensor readings, etc. 
+>An Information Object is a data point that is contained within an ASDU. Information Objects relay a variety of information from the master, for example, breaker status, sensor readings, etc. 
 
->[!IMPORTANT] Each Information Object has an Information Object Address (IOA), which is the address of the data point within the ASDU. Along with the IOA, the value of each data point can also be observed.
+>Each Information Object has an Information Object Address (IOA), which is the address of the data point within the ASDU. Along with the IOA, the value of each data point can also be observed.
+
 

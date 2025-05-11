@@ -12,9 +12,11 @@ toc: true
 toc_label: Contents
 ---
 ## Objective ##
+
 In the ever-evolving landscape of cyber threats, let us have a look at a rapidly developing domain in cyber-security; Operational Technology (OT) Security. In this post, we will be engaging in an attack and defend exercise targeting IEC 104 - a communication protocol used by various types of OT/ICS systems.
 
 ## Threats towards OT Systems - A Quick Introduction
+
 In order for us to understand the importance of OT security and the ever-growing threat landscape, let's take a look at a geo-political warfare case.
 
 During the Russia-Ukraine war, [Mandiant](https://cloud.google.com/blog/topics/threat-intelligence/sandworm-disrupts-power-ukraine-operational-technology/) documented a coordinated cyber campaign by Russian state-sponsored threat groups. A key aggressor in this campaign was an APT tracked as Sandworm (a.k.a APT44), which has been attributed to Russian intelligence (GRU).
@@ -59,7 +61,7 @@ This will spin up a good IEC 104 testing environment with one substation.
 
 Let's go over the Red Team part of this exercise. Our main objective would be to compromise the substation and tamper with critical resources by sending malicious control commands in order to cause cyber/physical damage.
 
-### Target Discovery
+### Target Reconnaissance
 
 First, we will conduct some reconnaissance on the target IP. We will be using `nmap` for this, and will be using the flags `-Pn` and `-p-` to skip the ping check and scan all ports.
 
@@ -77,7 +79,7 @@ Nmap done: 1 IP address (1 host up) scanned in 7.85 seconds
 
 From the output, we can see that the service `iec-104` is running on port `2404` of our Conpot instance. But this only confirms that the service is running. In order to interact with it, we need to go through substations that are connected to the master.
 
->A substation is known as an Application Service Data Unit (ASDU), which is essentially a Remote Terminal Unit (RTU) that is used to communicate with the master. Each ASDU has a common address, known as an ASDU Common Address which is a unique identifier.
+>An Application Service Data Unit (ASDU) is a message wrapper that facilitates communication and the transmission of data points between a Remote Terminal Unit (RTU) and the master.  Each ASDU has a common address, known as an ASDU Common Address which is unique to each RTU.
 
 `nmap` has a neat script to discover these ASDU addresses, which is called `iec-identify.nse`. Let's utilize this:
 
@@ -102,4 +104,5 @@ The output shows one ASDU address connected to the master, which is `7720` and w
 
 >Each Information Object has an Information Object Address (IOA), which is the address of the data point within the ASDU. Along with the IOA, the value of each data point can also be observed.
 
+### IOA Discovery
 

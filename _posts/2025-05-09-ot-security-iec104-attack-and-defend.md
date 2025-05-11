@@ -77,7 +77,7 @@ Nmap done: 1 IP address (1 host up) scanned in 7.85 seconds
 
 From the output, we can see that the service `iec-104` is running on port `2404` of our Conpot instance. But this only confirms that the service is running. In order to interact with it, we need to go through substations that are connected to the master.
 
->[! IMPORTANT] A substation is known as an Application Service Data Unit (ASDU), which is essentially a Remote Terminal Unit (RTU) that is used to communicate with the master. Each ASDU has a common address, known as an ASDU Common Address which is a unique identifier.
+>A substation is known as an Application Service Data Unit (ASDU), which is essentially a Remote Terminal Unit (RTU) that is used to communicate with the master. Each ASDU has a common address, known as an ASDU Common Address which is a unique identifier.
 
 `nmap` has a neat script to discover these ASDU addresses, which is called `iec-identify.nse`. Let's utilize this:
 
@@ -96,7 +96,7 @@ PORT     STATE SERVICE
 Nmap done: 1 IP address (1 host up) scanned in 8.78 seconds
 ```
 
-The output shows one ASDU address connected to the master, which is `7720` and will come in handy during further stages of the attack. One more notable observation is the number of information objects.
+The output shows one ASDU address connected to the master, which is `7720` and will come in handy during further stages of the attack. Another notable observation is the number of information objects.
 
 >An Information Object is a data point that is contained within an ASDU. Information Objects relay a variety of information from the master, for example, breaker status, sensor readings, etc. 
 

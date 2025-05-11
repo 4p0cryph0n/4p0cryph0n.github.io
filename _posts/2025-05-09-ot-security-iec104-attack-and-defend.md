@@ -77,5 +77,28 @@ Nmap done: 1 IP address (1 host up) scanned in 7.85 seconds
 
 From the output, we can see that the service `iec-104` is running on port `2404` of our Conpot instance. But this only confirms that the service is running. In order to interact with it, we need to go through substations that are connected to the master.
 
-A substation is known as an Application Service Data Unit (ASDU), which is essentially a Remote Terminal Unit (RTU) that is used to communicate with the master. Each ASDU has a common address, known as an ASDU Common Address which is a unique identifier.
+>[! IMPORTANT] A substation is known as an Application Service Data Unit (ASDU), which is essentially a Remote Terminal Unit (RTU) that is used to communicate with the master. Each ASDU has a common address, known as an ASDU Common Address which is a unique identifier.
+
+`nmap` has a neat script to discover these ASDU addresses, which is called `iec-identify.nse`. Let's utilize this:
+
+```bash
+kali:iec104_testing:% nmap 172.17.0.2 -Pn -p 2404 --script iec-identify.nse
+Starting Nmap 7.94 ( https://nmap.org ) at 2025-05-11 08:44 EDT
+Nmap scan report for 172.17.0.2
+Host is up (0.00047s latency).
+
+PORT     STATE SERVICE
+2404/tcp open  iec-104
+| iec-identify: 
+|   ASDU address: 7720
+|_  Information objects: 59
+
+Nmap done: 1 IP address (1 host up) scanned in 8.78 seconds
+```
+
+The output shows one ASDU address connected to the master, which is `7720` and will come in handy during further stages of the attack. One more notable observation is the number of information objects.
+
+>[! IMPORTANT] An Information Object is a data point that is contained within an ASDU. Information Objects relay a variety of information from the master, for example, breaker status, sensor readings, etc. 
+
+>[!IMPORTANT] Each Information Object has an Information Object Address (IOA), which is the address of the data point within the ASDU. Along with the IOA, the value of each data point can also be observed.
 

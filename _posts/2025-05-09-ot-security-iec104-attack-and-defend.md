@@ -231,14 +231,15 @@ int main(void)
 
 In this script, I have accounted for the most common Information Object types, the explanations for which you can find below:
 
-|**Case**|**Type ID**|**IEC 104 Name**|**Meaning**|**What the code does**|
-|---|---|---|---|---|
-|`C_IC_NA_1`|100|General Interrogation Command|Request or indication to get all current values from a device|Prints IOA + “General Interrogation Command”|
-|`M_SP_NA_1`|1|Single Point Information|Boolean on/off status of a single device (e.g., breaker)|Prints IOA + value (`0=off`, `1=on`)|
-|`M_DP_NA_1`|3|Double Point Information|Two-bit state info (e.g., intermediate, on, off, indeterminate)|Prints IOA + DPI value|
-|`M_ME_NB_1`|11|Measured Value, Scaled Integer|Analog value represented as a scaled integer|Prints IOA + integer value|
-|`M_ME_NC_1`|13|Measured Value, Short Floating Pt|Analog value represented as 32-bit IEEE 754 float|Prints IOA + float value|
-|**default**|—|Unknown/Other|Any unhandled ASDU type|Prints IOA + “Unparsed type”|
+| **Case**    | **Type ID** | **IEC 104 Name**                  | **Meaning**                                                     | **What the code does**                       |
+| ----------- | ----------- | --------------------------------- | --------------------------------------------------------------- | -------------------------------------------- |
+| `C_IC_NA_1` | 100         | General Interrogation Command     | Request or indication to get all current values from a device   | Prints IOA + “General Interrogation Command” |
+| `M_SP_NA_1` | 1           | Single Point Information          | Boolean on/off status of a single device (e.g., breaker)        | Prints IOA + value (`0=off`, `1=on`)         |
+| `M_DP_NA_1` | 3           | Double Point Information          | Two-bit state info (e.g., intermediate, on, off, indeterminate) | Prints IOA + DPI value                       |
+| `M_ME_NB_1` | 11          | Measured Value, Scaled Integer    | Analog value represented as a scaled integer                    | Prints IOA + integer value                   |
+| `M_ME_NC_1` | 13          | Measured Value, Short Floating Pt | Analog value represented as 32-bit IEEE 754 float               | Prints IOA + float value                     |
+| **default** | —           | Unknown/Other                     | Any unhandled ASDU type                                         | Prints IOA + “Unparsed type”                 |
+
 Running the script, we get an output of all the available Information Objects associated with this Application Service Data Unit (ASDU):
 
 ```sh

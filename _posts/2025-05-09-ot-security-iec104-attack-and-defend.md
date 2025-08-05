@@ -106,3 +106,211 @@ The output shows one ASDU address connected to the master, which is `7720` and w
 
 ### IOA Discovery
 
+Let's conduct our second-stage reconnaissance, in which we will now focus on discovering the various Information Objects and their respective addresses to pick our targets for manipulation.
+
+While Metasploit comes with a handy module for this, we are going to rather rise above that script kiddie mindset to better understand the hierarchical structure of ASDUs, Information Objects, and Information Object Addresses (IOAs) in relation to the master. Let's start scripting!
+
+#### IOA Discovery Script
+
+Using the neat [lib60870-C](https://github.com/mz-automation/lib60870) library for, we can interact with our IEC-104 instance. You can find the build instructions on the GitHub page. Below is a script that I have written for IOA discovery:
+
+```c
+#include "cs104_connection.h"
+#include "hal_thread.h"
+#include "hal_time.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+
+static int running = 1;
+
+static void
+connectionHandler(void* parameter, CS104_Connection connection, CS104_ConnectionEvent event)
+{
+    switch (event) {
+        case CS104_CONNECTION_OPENED:
+            printf("[+] Connection established\n");
+            break;
+        case CS104_CONNECTION_CLOSED:
+            printf("[-] Connection closed\n");
+            running = 0;
+            break;
+        case CS104_CONNECTION_FAILED:
+            printf("[-] Connection failed\n");
+            running = 0;
+            break;
+        default:
+            break;
+    }
+}
+
+static bool
+asduHandler(void* parameter, int address, CS101_ASDU asdu)
+{
+    printf("[>] Received ASDU: Type=%s (%d), Elements=%d\n",
+        TypeID_toString(CS101_ASDU_getTypeID(asdu)),
+        CS101_ASDU_getTypeID(asdu),
+        CS101_ASDU_getNumberOfElements(asdu));
+
+    for (int i = 0; i < CS101_ASDU_getNumberOfElements(asdu); i++) {
+        InformationObject io = CS101_ASDU_getElement(asdu, i);
+        int ioa = InformationObject_getObjectAddress(io);
+
+        switch (CS101_ASDU_getTypeID(asdu)) {
+            case C_IC_NA_1: {
+   		 printf("    IOA: %d | Type: C_IC_NA_1 | [General Interrogation Command]\n", ioa);
+    		 break;
+	     }		
+            case M_SP_NA_1: {
+                SinglePointInformation spi = (SinglePointInformation) io;
+                printf("    IOA: %d | Type: M_SP_NA_1 | Value: %d\n",
+                    ioa, SinglePointInformation_getValue(spi));
+                break;
+            }
+            case M_DP_NA_1: {
+                DoublePointInformation dpi = (DoublePointInformation) io;
+                printf("    IOA: %d | Type: M_DP_NA_1 | Value: %d\n",
+                    ioa, DoublePointInformation_getValue(dpi));
+                break;
+            }
+            case M_ME_NB_1: {
+                MeasuredValueScaled mvs = (MeasuredValueScaled) io;
+                printf("    IOA: %d | Type: M_ME_NB_1 | Value: %d\n",
+                    ioa, MeasuredValueScaled_getValue(mvs));
+                break;
+            }
+            case M_ME_NC_1: {
+                MeasuredValueShort mvs = (MeasuredValueShort) io;
+                printf("    IOA: %d | Type: M_ME_NC_1 | Value: %.2f\n",
+                    ioa, MeasuredValueShort_getValue(mvs));
+                break;
+            }
+            default:
+                printf("    IOA: %d | Type: %d | [Unparsed type]\n",
+                    ioa, CS101_ASDU_getTypeID(asdu));
+                break;
+        }
+
+        InformationObject_destroy(io);
+    }
+
+    return true;
+}
+
+
+int main(void)
+{
+    const char* ip = "172.17.0.2";
+    int port = 2404;
+    int asdu = 7720;
+
+    printf("[*] Connecting to %s:%d (ASDU %d)\n", ip, port, asdu);
+
+    CS104_Connection con = CS104_Connection_create(ip, port);
+
+    CS104_Connection_setConnectionHandler(con, connectionHandler, NULL);
+    CS104_Connection_setASDUReceivedHandler(con, asduHandler, NULL);
+
+    if (CS104_Connection_connect(con)) {
+        CS104_Connection_sendStartDT(con);
+
+        Thread_sleep(500);
+
+        printf("[>] Sending general interrogation (C_IC_NA_1)...\n");
+        CS104_Connection_sendInterrogationCommand(con, CS101_COT_ACTIVATION, asdu, IEC60870_QOI_STATION);
+
+        Thread_sleep(5000);
+    } else {
+        printf("[-] Failed to connect to target\n");
+    }
+
+    CS104_Connection_destroy(con);
+    return 0;
+}
+```
+
+In this script, I have accounted for the most common Information Object types, the explanations for which you can find below:
+
+|**Case**|**Type ID**|**IEC 104 Name**|**Meaning**|**What the code does**|
+|---|---|---|---|---|
+|`C_IC_NA_1`|100|General Interrogation Command|Request or indication to get all current values from a device|Prints IOA + “General Interrogation Command”|
+|`M_SP_NA_1`|1|Single Point Information|Boolean on/off status of a single device (e.g., breaker)|Prints IOA + value (`0=off`, `1=on`)|
+|`M_DP_NA_1`|3|Double Point Information|Two-bit state info (e.g., intermediate, on, off, indeterminate)|Prints IOA + DPI value|
+|`M_ME_NB_1`|11|Measured Value, Scaled Integer|Analog value represented as a scaled integer|Prints IOA + integer value|
+|`M_ME_NC_1`|13|Measured Value, Short Floating Pt|Analog value represented as 32-bit IEEE 754 float|Prints IOA + float value|
+|**default**|—|Unknown/Other|Any unhandled ASDU type|Prints IOA + “Unparsed type”|
+Running the script, we get an output of all the available Information Objects associated with this Application Service Data Unit (ASDU):
+
+```sh
+[*] Connecting to 172.17.0.2:2404 (ASDU 7720)
+[+] Connection established
+[>] Sending general interrogation (C_IC_NA_1)...
+[>] Received ASDU: Type=C_IC_NA_1 (100), Elements=1
+    IOA: 0 | Type: C_IC_NA_1 | [General Interrogation Command]
+[>] Received ASDU: Type=M_SP_NA_1 (1), Elements=16
+    IOA: 3348 | Type: M_SP_NA_1 | Value: 1
+    IOA: 3349 | Type: M_SP_NA_1 | Value: 0
+    IOA: 3350 | Type: M_SP_NA_1 | Value: 0
+    IOA: 3352 | Type: M_SP_NA_1 | Value: 1
+    IOA: 3353 | Type: M_SP_NA_1 | Value: 1
+    IOA: 3360 | Type: M_SP_NA_1 | Value: 1
+    IOA: 3361 | Type: M_SP_NA_1 | Value: 1
+    IOA: 3362 | Type: M_SP_NA_1 | Value: 1
+    IOA: 3363 | Type: M_SP_NA_1 | Value: 1
+    IOA: 3364 | Type: M_SP_NA_1 | Value: 1
+    IOA: 3365 | Type: M_SP_NA_1 | Value: 1
+    IOA: 3366 | Type: M_SP_NA_1 | Value: 1
+    IOA: 3367 | Type: M_SP_NA_1 | Value: 1
+    IOA: 3368 | Type: M_SP_NA_1 | Value: 0
+    IOA: 3369 | Type: M_SP_NA_1 | Value: 1
+    IOA: 3370 | Type: M_SP_NA_1 | Value: 0
+[>] Received ASDU: Type=M_DP_NA_1 (3), Elements=10
+    IOA: 8450 | Type: M_DP_NA_1 | Value: 1
+    IOA: 8451 | Type: M_DP_NA_1 | Value: 2
+    IOA: 8452 | Type: M_DP_NA_1 | Value: 1
+    IOA: 8453 | Type: M_DP_NA_1 | Value: 2
+    IOA: 8454 | Type: M_DP_NA_1 | Value: 2
+    IOA: 8455 | Type: M_DP_NA_1 | Value: 1
+    IOA: 8456 | Type: M_DP_NA_1 | Value: 1
+    IOA: 8457 | Type: M_DP_NA_1 | Value: 1
+    IOA: 8458 | Type: M_DP_NA_1 | Value: 1
+    IOA: 8459 | Type: M_DP_NA_1 | Value: 1
+[>] Received ASDU: Type=M_ME_NB_1 (11), Elements=11
+    IOA: 25612 | Type: M_ME_NB_1 | Value: 103
+    IOA: 25613 | Type: M_ME_NB_1 | Value: 31
+    IOA: 25651 | Type: M_ME_NB_1 | Value: -49
+    IOA: 25708 | Type: M_ME_NB_1 | Value: 28871
+    IOA: 25709 | Type: M_ME_NB_1 | Value: 13781
+    IOA: 25778 | Type: M_ME_NB_1 | Value: 119
+    IOA: 25779 | Type: M_ME_NB_1 | Value: 219
+    IOA: 25790 | Type: M_ME_NB_1 | Value: 1009
+    IOA: 25791 | Type: M_ME_NB_1 | Value: -2
+    IOA: 25792 | Type: M_ME_NB_1 | Value: 701
+    IOA: 25793 | Type: M_ME_NB_1 | Value: 441
+[>] Received ASDU: Type=M_ME_NC_1 (13), Elements=22
+    IOA: 27395 | Type: M_ME_NC_1 | Value: 16.20
+    IOA: 27469 | Type: M_ME_NC_1 | Value: 15.90
+    IOA: 27470 | Type: M_ME_NC_1 | Value: 512.10
+    IOA: 27471 | Type: M_ME_NC_1 | Value: 433.40
+    IOA: 27482 | Type: M_ME_NC_1 | Value: 344.40
+    IOA: 27522 | Type: M_ME_NC_1 | Value: -0.44
+    IOA: 27523 | Type: M_ME_NC_1 | Value: 43.00
+    IOA: 27524 | Type: M_ME_NC_1 | Value: 41.20
+    IOA: 27533 | Type: M_ME_NC_1 | Value: 12.10
+    IOA: 27592 | Type: M_ME_NC_1 | Value: 91.00
+    IOA: 27593 | Type: M_ME_NC_1 | Value: 98.80
+    IOA: 27594 | Type: M_ME_NC_1 | Value: 110.00
+    IOA: 27595 | Type: M_ME_NC_1 | Value: 85.10
+    IOA: 27596 | Type: M_ME_NC_1 | Value: 85.20
+    IOA: 27597 | Type: M_ME_NC_1 | Value: 410.00
+    IOA: 27598 | Type: M_ME_NC_1 | Value: 592.00
+    IOA: 27599 | Type: M_ME_NC_1 | Value: 1.50
+    IOA: 27600 | Type: M_ME_NC_1 | Value: 44.70
+    IOA: 27601 | Type: M_ME_NC_1 | Value: 11.90
+    IOA: 27602 | Type: M_ME_NC_1 | Value: 221.45
+    IOA: 27603 | Type: M_ME_NC_1 | Value: 13.40
+    IOA: 27604 | Type: M_ME_NC_1 | Value: 0.00
+[>] Received ASDU: Type=C_IC_NA_1 (100), Elements=1
+    IOA: 0 | Type: C_IC_NA_1 | [General Interrogation Command]
+[-] Connection closed
+```

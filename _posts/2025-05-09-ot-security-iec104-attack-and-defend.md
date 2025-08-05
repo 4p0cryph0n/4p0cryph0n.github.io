@@ -315,3 +315,12 @@ Running the script, we get an output of all the available Information Objects as
     IOA: 0 | Type: C_IC_NA_1 | [General Interrogation Command]
 [-] Connection closed
 ```
+
+Corresponding the results with the different types of Information Objects, we can see that there are multiple different values that we can play around with to cause destruction.
+
+For instance, let's take the type `M_SP_NA_1 (1)`, which either has the value on (1) or off (0). Let's say if we set the value of all of these to off, this could potentially cause a major outage or service disruption, assuming that these are either breakers and/or critical devices.
+
+### Turn Off Breakers/Devices
+
+Let's write a script that turns off all critical devices/breakers. To do this, we will be sending a single command control ASDU, which is basically `C_SC_NA_1` which will be false (off)
+

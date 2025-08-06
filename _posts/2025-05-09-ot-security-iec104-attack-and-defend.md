@@ -35,27 +35,15 @@ It facilitates remote control and monitoring over TCP/IP and is usually used for
 
 ## Target Lab Setup
 
-To simulate an IEC 104 setup, I will be using an open-source OT security lab project called [Conpot](http://conpot.org/) along with Kali Linux. Conpot is a OT systems honeypot that contains multiple templates for security templates, one of which is the IEC 104 template. 
+To simulate a near-accurate IEC 104 setup, I will be using an open-source IEC 104 simulator project called [J60870](https://www.openmuc.org/iec-60870-5-104/download/) along with Kali Linux. J60870 is a Java-based library implementing the IEC 60870-5-104 communication standard, and comes with an IEC 104 server example.
 
-Conpot can be installed using Docker as such:
-
-```bash
-docker pull conpot/conpot 
-```
-
-And can be run using the command:
+You can download it from the link above and build it using `gradlew`. Then, it can be run as such:
 
 ```bash
-docker run -it -p 80:80 -p 102:102 -p 502:502 -p 161:161/udp --network=bridge honeynet/conpot:latest /bin/sh
+java -cp build/libs/j60870-1.7.2.jar:cli-app/build/classes/java/main org.openmuc.j60870.app.SampleServer 
 ```
 
-The Conpot binary is in `.local/bin`. To run it with the IEC 104 template, we do:
-
-```bash
-~/.local/bin $ ./conpot -f -t IEC104
-```
-
-This will spin up a good IEC 104 testing environment with one substation.
+This will spin up a good IEC 104 testing environment with one substation, which will bind to `127.0.0.1:2404`.
 
 ## Red Team - Attack
 
@@ -66,36 +54,35 @@ Let's go over the Red Team part of this exercise. Our main objective would be to
 First, we will conduct some reconnaissance on the target IP. We will be using `nmap` for this, and will be using the flags `-Pn` and `-p-` to skip the ping check and scan all ports.
 
 ```bash
-kali:iec104_testing:% nmap 172.17.0.2 -Pn -p- 
-Starting Nmap 7.94 ( https://nmap.org ) at 2025-05-09 08:13 EDT
-Nmap scan report for 172.17.0.2
-Host is up (0.000034s latency).
+Starting Nmap 7.94 ( https://nmap.org ) at 2025-08-06 09:30 EDT
+Nmap scan report for localhost (127.0.0.1)
+Host is up (0.000032s latency).
 Not shown: 65534 closed tcp ports (conn-refused)
 PORT     STATE SERVICE
 2404/tcp open  iec-104
 
-Nmap done: 1 IP address (1 host up) scanned in 7.85 seconds
+Nmap done: 1 IP address (1 host up) scanned in 1.53 seconds
 ```
 
-From the output, we can see that the service `iec-104` is running on port `2404` of our Conpot instance. But this only confirms that the service is running. In order to interact with it, we need to go through substations that are connected to the master.
+From the output, we can see that the service `iec-104` is running on port `2404`. But this only confirms that the service is running. In order to interact with it, we need to go through substations that are connected to the master.
 
 >An Application Service Data Unit (ASDU) is a message wrapper that facilitates communication and the transmission of data points between a Remote Terminal Unit (RTU) and the master.  Each ASDU has a common address, known as an ASDU Common Address which is unique to each RTU.
 
 `nmap` has a neat script to discover these ASDU addresses, which is called `iec-identify.nse`. Let's utilize this:
 
 ```bash
-kali:iec104_testing:% nmap 172.17.0.2 -Pn -p 2404 --script iec-identify.nse
-Starting Nmap 7.94 ( https://nmap.org ) at 2025-05-11 08:44 EDT
-Nmap scan report for 172.17.0.2
-Host is up (0.00047s latency).
+kali:~:% nmap 127.0.0.1 -Pn -p 2404 --script iec-identify.nse
+Starting Nmap 7.94 ( https://nmap.org ) at 2025-08-06 09:29 EDT
+Nmap scan report for localhost (127.0.0.1)
+Host is up (0.000065s latency).
 
 PORT     STATE SERVICE
 2404/tcp open  iec-104
 | iec-identify: 
-|   ASDU address: 7720
-|_  Information objects: 59
+|   ASDU address: 65535
+|_  Information objects: 3
 
-Nmap done: 1 IP address (1 host up) scanned in 8.78 seconds
+Nmap done: 1 IP address (1 host up) scanned in 0.28 seconds
 ```
 
 The output shows one ASDU address connected to the master, which is `7720` and will come in handy during further stages of the attack. Another notable observation is the number of information objects.
@@ -147,62 +134,83 @@ connectionHandler(void* parameter, CS104_Connection connection, CS104_Connection
 static bool
 asduHandler(void* parameter, int address, CS101_ASDU asdu)
 {
+    TypeID type = CS101_ASDU_getTypeID(asdu);
+
     printf("[>] Received ASDU: Type=%s (%d), Elements=%d\n",
-        TypeID_toString(CS101_ASDU_getTypeID(asdu)),
-        CS101_ASDU_getTypeID(asdu),
+        TypeID_toString(type),
+        type,
         CS101_ASDU_getNumberOfElements(asdu));
+        
+    if (type == C_IC_NA_1) {
+        CS101_CauseOfTransmission cot = CS101_ASDU_getCOT(asdu);
 
-    for (int i = 0; i < CS101_ASDU_getNumberOfElements(asdu); i++) {
-        InformationObject io = CS101_ASDU_getElement(asdu, i);
-        int ioa = InformationObject_getObjectAddress(io);
+        if (cot == CS101_COT_ACTIVATION_CON)
+            printf("    [GI Activation Confirmation]\n");
+        else if (cot == CS101_COT_ACTIVATION_TERMINATION)
+            printf("    [GI Termination]\n");
+        else
+            printf("    [GI Other COT: %d]\n", cot);
 
-        switch (CS101_ASDU_getTypeID(asdu)) {
-            case C_IC_NA_1: {
-   		 printf("    IOA: %d | Type: C_IC_NA_1 | [General Interrogation Command]\n", ioa);
-    		 break;
-	     }		
-            case M_SP_NA_1: {
-                SinglePointInformation spi = (SinglePointInformation) io;
+        return true;  // Skip IOA printing for GI
+    }
+
+    switch (type) {
+
+        case M_SP_NA_1: // Single point
+            for (int i = 0; i < CS101_ASDU_getNumberOfElements(asdu); i++) {
+                SinglePointInformation spi = (SinglePointInformation) CS101_ASDU_getElement(asdu, i);
                 printf("    IOA: %d | Type: M_SP_NA_1 | Value: %d\n",
-                    ioa, SinglePointInformation_getValue(spi));
-                break;
+                    InformationObject_getObjectAddress((InformationObject) spi),
+                    SinglePointInformation_getValue(spi));
+                InformationObject_destroy((InformationObject) spi);
             }
-            case M_DP_NA_1: {
-                DoublePointInformation dpi = (DoublePointInformation) io;
-                printf("    IOA: %d | Type: M_DP_NA_1 | Value: %d\n",
-                    ioa, DoublePointInformation_getValue(dpi));
-                break;
-            }
-            case M_ME_NB_1: {
-                MeasuredValueScaled mvs = (MeasuredValueScaled) io;
-                printf("    IOA: %d | Type: M_ME_NB_1 | Value: %d\n",
-                    ioa, MeasuredValueScaled_getValue(mvs));
-                break;
-            }
-            case M_ME_NC_1: {
-                MeasuredValueShort mvs = (MeasuredValueShort) io;
-                printf("    IOA: %d | Type: M_ME_NC_1 | Value: %.2f\n",
-                    ioa, MeasuredValueShort_getValue(mvs));
-                break;
-            }
-            default:
-                printf("    IOA: %d | Type: %d | [Unparsed type]\n",
-                    ioa, CS101_ASDU_getTypeID(asdu));
-                break;
-        }
+            break;
 
-        InformationObject_destroy(io);
+        case M_DP_NA_1: // Double point
+            for (int i = 0; i < CS101_ASDU_getNumberOfElements(asdu); i++) {
+                DoublePointInformation dpi = (DoublePointInformation) CS101_ASDU_getElement(asdu, i);
+                printf("    IOA: %d | Type: M_DP_NA_1 | Value: %d\n",
+                    InformationObject_getObjectAddress((InformationObject) dpi),
+                    DoublePointInformation_getValue(dpi));
+                InformationObject_destroy((InformationObject) dpi);
+            }
+            break;
+
+        case M_ME_NB_1: // Scaled measured value
+            for (int i = 0; i < CS101_ASDU_getNumberOfElements(asdu); i++) {
+                MeasuredValueScaled mvs = (MeasuredValueScaled) CS101_ASDU_getElement(asdu, i);
+                printf("    IOA: %d | Type: M_ME_NB_1 | Value: %d\n",
+                    InformationObject_getObjectAddress((InformationObject) mvs),
+                    MeasuredValueScaled_getValue(mvs));
+                InformationObject_destroy((InformationObject) mvs);
+            }
+            break;
+
+        case M_ME_NC_1: // Short float measured value
+            for (int i = 0; i < CS101_ASDU_getNumberOfElements(asdu); i++) {
+                MeasuredValueShort mvs = (MeasuredValueShort) CS101_ASDU_getElement(asdu, i);
+                printf("    IOA: %d | Type: M_ME_NC_1 | Value: %.2f\n",
+                    InformationObject_getObjectAddress((InformationObject) mvs),
+                    MeasuredValueShort_getValue(mvs));
+                InformationObject_destroy((InformationObject) mvs);
+            }
+            break;
+
+        default:
+            printf("    [Unsupported ASDU type: %d]\n", type);
+            break;
     }
 
     return true;
 }
 
 
+
 int main(void)
 {
-    const char* ip = "172.17.0.2";
+    const char* ip = "127.0.0.1";
     int port = 2404;
-    int asdu = 7720;
+    int asdu = 65535;
 
     printf("[*] Connecting to %s:%d (ASDU %d)\n", ip, port, asdu);
 
@@ -227,6 +235,7 @@ int main(void)
     CS104_Connection_destroy(con);
     return 0;
 }
+
 ```
 
 In this script, I have accounted for the most common Information Object types, the explanations for which you can find below:
@@ -243,82 +252,23 @@ In this script, I have accounted for the most common Information Object types, t
 Running the script, we get an output of all the available Information Objects associated with this Application Service Data Unit (ASDU):
 
 ```sh
-[*] Connecting to 172.17.0.2:2404 (ASDU 7720)
+[*] Connecting to 127.0.0.1:2404 (ASDU 65535)
 [+] Connection established
 [>] Sending general interrogation (C_IC_NA_1)...
 [>] Received ASDU: Type=C_IC_NA_1 (100), Elements=1
-    IOA: 0 | Type: C_IC_NA_1 | [General Interrogation Command]
-[>] Received ASDU: Type=M_SP_NA_1 (1), Elements=16
-    IOA: 3348 | Type: M_SP_NA_1 | Value: 1
-    IOA: 3349 | Type: M_SP_NA_1 | Value: 0
-    IOA: 3350 | Type: M_SP_NA_1 | Value: 0
-    IOA: 3352 | Type: M_SP_NA_1 | Value: 1
-    IOA: 3353 | Type: M_SP_NA_1 | Value: 1
-    IOA: 3360 | Type: M_SP_NA_1 | Value: 1
-    IOA: 3361 | Type: M_SP_NA_1 | Value: 1
-    IOA: 3362 | Type: M_SP_NA_1 | Value: 1
-    IOA: 3363 | Type: M_SP_NA_1 | Value: 1
-    IOA: 3364 | Type: M_SP_NA_1 | Value: 1
-    IOA: 3365 | Type: M_SP_NA_1 | Value: 1
-    IOA: 3366 | Type: M_SP_NA_1 | Value: 1
-    IOA: 3367 | Type: M_SP_NA_1 | Value: 1
-    IOA: 3368 | Type: M_SP_NA_1 | Value: 0
-    IOA: 3369 | Type: M_SP_NA_1 | Value: 1
-    IOA: 3370 | Type: M_SP_NA_1 | Value: 0
-[>] Received ASDU: Type=M_DP_NA_1 (3), Elements=10
-    IOA: 8450 | Type: M_DP_NA_1 | Value: 1
-    IOA: 8451 | Type: M_DP_NA_1 | Value: 2
-    IOA: 8452 | Type: M_DP_NA_1 | Value: 1
-    IOA: 8453 | Type: M_DP_NA_1 | Value: 2
-    IOA: 8454 | Type: M_DP_NA_1 | Value: 2
-    IOA: 8455 | Type: M_DP_NA_1 | Value: 1
-    IOA: 8456 | Type: M_DP_NA_1 | Value: 1
-    IOA: 8457 | Type: M_DP_NA_1 | Value: 1
-    IOA: 8458 | Type: M_DP_NA_1 | Value: 1
-    IOA: 8459 | Type: M_DP_NA_1 | Value: 1
-[>] Received ASDU: Type=M_ME_NB_1 (11), Elements=11
-    IOA: 25612 | Type: M_ME_NB_1 | Value: 103
-    IOA: 25613 | Type: M_ME_NB_1 | Value: 31
-    IOA: 25651 | Type: M_ME_NB_1 | Value: -49
-    IOA: 25708 | Type: M_ME_NB_1 | Value: 28871
-    IOA: 25709 | Type: M_ME_NB_1 | Value: 13781
-    IOA: 25778 | Type: M_ME_NB_1 | Value: 119
-    IOA: 25779 | Type: M_ME_NB_1 | Value: 219
-    IOA: 25790 | Type: M_ME_NB_1 | Value: 1009
-    IOA: 25791 | Type: M_ME_NB_1 | Value: -2
-    IOA: 25792 | Type: M_ME_NB_1 | Value: 701
-    IOA: 25793 | Type: M_ME_NB_1 | Value: 441
-[>] Received ASDU: Type=M_ME_NC_1 (13), Elements=22
-    IOA: 27395 | Type: M_ME_NC_1 | Value: 16.20
-    IOA: 27469 | Type: M_ME_NC_1 | Value: 15.90
-    IOA: 27470 | Type: M_ME_NC_1 | Value: 512.10
-    IOA: 27471 | Type: M_ME_NC_1 | Value: 433.40
-    IOA: 27482 | Type: M_ME_NC_1 | Value: 344.40
-    IOA: 27522 | Type: M_ME_NC_1 | Value: -0.44
-    IOA: 27523 | Type: M_ME_NC_1 | Value: 43.00
-    IOA: 27524 | Type: M_ME_NC_1 | Value: 41.20
-    IOA: 27533 | Type: M_ME_NC_1 | Value: 12.10
-    IOA: 27592 | Type: M_ME_NC_1 | Value: 91.00
-    IOA: 27593 | Type: M_ME_NC_1 | Value: 98.80
-    IOA: 27594 | Type: M_ME_NC_1 | Value: 110.00
-    IOA: 27595 | Type: M_ME_NC_1 | Value: 85.10
-    IOA: 27596 | Type: M_ME_NC_1 | Value: 85.20
-    IOA: 27597 | Type: M_ME_NC_1 | Value: 410.00
-    IOA: 27598 | Type: M_ME_NC_1 | Value: 592.00
-    IOA: 27599 | Type: M_ME_NC_1 | Value: 1.50
-    IOA: 27600 | Type: M_ME_NC_1 | Value: 44.70
-    IOA: 27601 | Type: M_ME_NC_1 | Value: 11.90
-    IOA: 27602 | Type: M_ME_NC_1 | Value: 221.45
-    IOA: 27603 | Type: M_ME_NC_1 | Value: 13.40
-    IOA: 27604 | Type: M_ME_NC_1 | Value: 0.00
+    [GI Activation Confirmation]
+[>] Received ASDU: Type=M_ME_NB_1 (11), Elements=3
+    IOA: 1 | Type: M_ME_NB_1 | Value: -32768
+    IOA: 2 | Type: M_ME_NB_1 | Value: 10
+    IOA: 3 | Type: M_ME_NB_1 | Value: -5
 [>] Received ASDU: Type=C_IC_NA_1 (100), Elements=1
-    IOA: 0 | Type: C_IC_NA_1 | [General Interrogation Command]
+    [GI Termination]
 [-] Connection closed
 ```
 
-Corresponding the results with the different types of Information Objects, we can see that there are multiple different values that we can play around with to cause destruction.
+Corresponding the results with the different types of information object, we can see that the type is `M_ME_NB_1`, which is Measured Value, Scaled Integer. This could indicate that this information object could be measuring tank levels, or something similar.
 
-For instance, let's take the type `M_SP_NA_1 (1)`, which either has the value on (1) or off (0). Let's say if we set the value of all of these to off, this could potentially cause a major outage or service disruption, assuming that these are either breakers and/or critical devices.
+
 
 ### Turn Off Breakers/Devices
 

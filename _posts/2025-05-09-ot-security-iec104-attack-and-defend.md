@@ -266,11 +266,6 @@ Running the script, we get an output of all the available Information Objects as
 [-] Connection closed
 ```
 
-Corresponding the results with the different types of information object, we can see that the type is `M_ME_NB_1`, which is Measured Value, Scaled Integer. This could indicate that this information object could be measuring tank levels, or something similar.
+Corresponding the results with the different types of information object, we can see that the type is `M_ME_NB_1`, which is Measured Value, Scaled Integer. This could indicate that this information object could be measuring tank levels, voltage levels, or something similar.
 
-
-
-### Turn Off Breakers/Devices
-
-Let's write a script that turns off all critical devices/breakers. To do this, we will be sending a single command control ASDU, which is basically `C_SC_NA_1` which will be false (off)
 

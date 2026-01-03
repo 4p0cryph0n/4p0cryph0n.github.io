@@ -13,7 +13,7 @@ toc_label: Contents
 ---
 ## Objective ##
 
-In the ever-evolving landscape of cyber threats, let us have a look at a rapidly developing domain in cyber-security; Operational Technology (OT) Security. In this post, we will be engaging in an attack and defend exercise targeting IEC 104 - a communication protocol used by various types of OT/ICS systems.
+In the ever-evolving landscape of cyber threats, let us have a look at a rapidly developing domain in cyber-security; Operational Technology (OT) Security. In this post, we will be engaging in an attack and defend exercise targeting IEC 104—a communication protocol used by various types of OT/ICS systems.
 
 ## Threats towards OT Systems - A Quick Introduction
 
@@ -54,10 +54,11 @@ docker network create --subnet 172.30.0.0/24 ot_net
 
 Then I went ahead assigned IPs to each of these machines based on its subnet. Feel free to change the `Dockerfile` for the containers in case you change the subnet. Each of the containers come with their respective build instructions. Y'all can recreate this lab locally and walkthrough the attack exercise as mentioned below. With that being said, let's dive right in!
 
-## Red Team - Attack
+## Attack Overview
 
-Let's go over the Red Team part of this exercise. Our main objective would be to compromise the substation and tamper with critical resources by sending malicious control commands in order to cause cyber/physical damage.
-
+So the attack scenario is as follows:
+- We are simulating a threat actor that has breached an IEC-104 engineering workstation that resides on the same network as an IEC-104 outstation and master. 
+- The threat actor uses the engineering workstation as a rogue master, owing to the inherent trust of IEC-104 wherein multiple masters on the same network are able to communicate with an outstation (we assume that there aren't any security measures apart from network segmentation in place to prevent this kind of an attack).
 ### Target Reconnaissance
 
 First, we will conduct some reconnaissance on the target IP. We will be using `nmap` for this, and will be using the flags `-Pn` and `-p-` to skip the ping check and scan all ports.

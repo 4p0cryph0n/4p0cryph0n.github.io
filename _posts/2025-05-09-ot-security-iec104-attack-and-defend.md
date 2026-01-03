@@ -17,7 +17,7 @@ In the ever-evolving landscape of cyber threats, let us have a look at a rapidly
 
 ## Threats towards OT Systems - A Quick Introduction
 
-In order for us to understand the importance of OT security and the ever-growing threat landscape, let's take a look at a geo-political warfare case.
+In order for us to understand the importance of OT security and the ever-growing threat landscape, let's take a look at a geo-political cyber-warfare case.
 
 During the Russia-Ukraine war, [Mandiant](https://cloud.google.com/blog/topics/threat-intelligence/sandworm-disrupts-power-ukraine-operational-technology/) documented a coordinated cyber campaign by Russian state-sponsored threat groups. A key aggressor in this campaign was an APT tracked as Sandworm (a.k.a APT44), which has been attributed to Russian intelligence (GRU).
 
@@ -29,21 +29,30 @@ This case, among many, shows the rapid evolution of OT threats and how they fit 
 
 ## IEC 104 - Overview
 
-IEC 104 (IEC-60870-5-104) is a communication protocol that is utilized by many types of OT/ICS and SCADA systems especially those that are a part of energy and power infrastructure. 
+IEC 104 (IEC-60870-5-104) is a communication protocol and standard that is utilized by many types of OT/ICS and SCADA systems, especially those that are a part of energy and power infrastructure. 
 
 It facilitates remote control and monitoring over TCP/IP and is usually used for connecting control centers (client/master) to RTU/IEDs and substations (server/slave). Using this protocol, several data points such as breaker status, tank levels, etc. can be monitored, ingested, and controlled.
 
-## Target Lab Setup
+To set the stage, **Sandworm** used **Industroyer2** to directly target the **IEC-60870-5-104 (IEC-104)** protocol, which was actively used by Ukrainian electrical substations at the time. The malware was designed to issue **legitimate breaker open commands** to electrical distribution equipment, temporarily cutting power in targeted areas. 
 
-To simulate a near-accurate IEC 104 setup, I will be using an open-source IEC 104 simulator project called [J60870](https://www.openmuc.org/iec-60870-5-104/download/) along with Kali Linux. J60870 is a Java-based library implementing the IEC 60870-5-104 communication standard, and comes with an IEC 104 server example.
+The objective was to **disrupt civilian and critical infrastructure**, including medical services, and to **apply psychological and societal pressure** during wartime conditions. These cyber operations were **temporally coordinated with kinetic attacks**, such as missile strikes and shelling against energy infrastructure, in order to **amplify disruption and complicate grid restoration efforts**.
 
-You can download it from the link above and build it using `gradlew`. Then, it can be run as such:
+IEC 60870-5-104 remains widely deployed across energy and other OT environments today, and because its core design predates modern security models, advanced threat actors can still exploit inherent trust assumptions at the protocol level—even when transport protections like TLS are implemented.
 
+## Target Lab Setup and Objective
+
+To simulate this attack to a near-accurate extent, I have created a lab which can be found at my [repository for OT Security projects](https://github.com/4p0cryph0n/otsec). It is constructed using Docker, and has the following components:
+
+- **IEC-104 RTU** - I have modified a well-known and well-built IEC-104 simulator project called [J60870](https://www.openmuc.org/iec-60870-5-104/download/) to contain features that real-world outstations (RTUs) have, such as Select-Before-Operate (SBO) control logic and real-time breaker state changes in order to better understand how these attacks may impact real-world RTUs.
+- **IEC-104 Master** - The master/client that comes by default with the J60870 simulator, untouched. This is present to understand the role of a master/SCADA server and how it communicates with an RTU by default.
+- **Engineering workstation** - An engineering workstation on the same network as the IEC-104 RTU and master. This is an Ubuntu box assumed to be breached by the threat actor, where the attacks will launch from. We will get into how this falls in the overall attack flow later. This workstation also contains the [lib60870-C](https://github.com/mz-automation/lib60870) library along with some header files added by me, to facilitate on-the-fly malware development.
+
+Also, I've setup a Docker network known as ``ot_net`` using the below command:
 ```bash
-java -cp build/libs/j60870-1.7.2.jar:cli-app/build/classes/java/main org.openmuc.j60870.app.SampleServer 
+docker network create --subnet 172.30.0.0/24 ot_net
 ```
 
-This will spin up a good IEC 104 testing environment with one substation, which will bind to `127.0.0.1:2404`.
+Then I went ahead assigned IPs to each of these machines based on its subnet. Feel free to change the `Dockerfile` for the containers in case you change the subnet. Each of the containers come with their respective build instructions. Y'all can recreate this lab locally and walkthrough the attack exercise as mentioned below. With that being said, let's dive right in!
 
 ## Red Team - Attack
 

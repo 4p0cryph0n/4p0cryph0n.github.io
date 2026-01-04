@@ -59,6 +59,7 @@ Then I went ahead assigned IPs to each of these machines based on its subnet. Fe
 So the attack scenario is as follows:
 - We are simulating a threat actor that has breached an IEC-104 engineering workstation that resides on the same network as an IEC-104 outstation and master. 
 - The threat actor uses the engineering workstation as a rogue master, owing to the inherent trust of IEC-104 wherein multiple masters on the same network are able to communicate with an outstation (we assume that there aren't any security measures apart from network segmentation in place to prevent this kind of an attack).
+
 ## Target Reconnaissance
 
 From the breached engineering machine, lets assume that the threat actor has already scanned the OT network and knows the IPs of the RTU and the connected master. The attacker is able to load `nmap` on the machine, and starts recon. First, let's scan all ports to figure out which port on the RTU is running the iec-104 service:

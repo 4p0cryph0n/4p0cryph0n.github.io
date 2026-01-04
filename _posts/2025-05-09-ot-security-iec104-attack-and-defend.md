@@ -44,8 +44,8 @@ IEC 60870-5-104 remains widely deployed across energy and other OT environments 
 To simulate this attack to a near-accurate extent, I have created a lab which can be found at my [repository for OT Security projects](https://github.com/4p0cryph0n/otsec). It is constructed using Docker, and has the following components:
 
 - **IEC-104 RTU** - I have modified a well-known and well-built IEC-104 simulator project called [J60870](https://www.openmuc.org/iec-60870-5-104/download/) to contain features that real-world outstations (RTUs) have, such as Select-Before-Operate (SBO) control logic and real-time breaker state changes in order to better understand how these attacks may impact real-world RTUs.
-- **IEC-104 Master** - The master/client that comes by default with the J60870 simulator, untouched. This is present to understand the role of a master/SCADA server and how it communicates with an RTU by default.
-- **Engineering workstation** - An engineering workstation on the same network as the IEC-104 RTU and master. This is an Ubuntu box assumed to be breached by the threat actor, where the attacks will launch from. We will get into how this falls in the overall attack flow later. This workstation also contains the [lib60870-C](https://github.com/mz-automation/lib60870) library along with some header files added by me, to facilitate on-the-fly malware development.
+- **IEC-104 Master** - The master/client that comes with the J60870 simulator modified to support our RTU. This is present to understand the role of a master/SCADA server and how it communicates with an RTU by default.
+- **Engineering workstation** - An engineering workstation on the same network   as the IEC-104 RTU and master. This is an Ubuntu box assumed to be breached by the threat actor, where the attacks will launch from. We will get into how this falls in the overall attack flow later. This workstation also contains the [lib60870-C](https://github.com/mz-automation/lib60870) library to facilitate on-the-fly malware development.
 
 Also, I've setup a Docker network known as ``ot_net`` using the below command:
 ```bash
@@ -61,30 +61,33 @@ So the attack scenario is as follows:
 - The threat actor uses the engineering workstation as a rogue master, owing to the inherent trust of IEC-104 wherein multiple masters on the same network are able to communicate with an outstation (we assume that there aren't any security measures apart from network segmentation in place to prevent this kind of an attack).
 ### Target Reconnaissance
 
-First, we will conduct some reconnaissance on the target IP. We will be using `nmap` for this, and will be using the flags `-Pn` and `-p-` to skip the ping check and scan all ports.
+From the breached engineering machine, lets assume that the threat actor has already scanned the OT network and knows the IPs of the RTU and the connected master. The attacker is able to load `nmap` on the machine, and starts recon. First, let's scan all ports to figure out which port on the RTU is running the iec-104 service:
 
 ```bash
-Starting Nmap 7.94 ( https://nmap.org ) at 2025-08-06 09:30 EDT
-Nmap scan report for localhost (127.0.0.1)
-Host is up (0.000032s latency).
-Not shown: 65534 closed tcp ports (conn-refused)
+otuser@a8f0b6ff9c14:~$ nmap -p- -Pn 172.30.0.2
+Starting Nmap 7.80 ( https://nmap.org ) at 2026-01-04 06:57 UTC
+Nmap scan report for server.ot_net (172.30.0.2)
+Host is up (0.000038s latency).
+Not shown: 65534 closed ports
 PORT     STATE SERVICE
 2404/tcp open  iec-104
 
-Nmap done: 1 IP address (1 host up) scanned in 1.53 seconds
+Nmap done: 1 IP address (1 host up) scanned in 0.62 seconds
 ```
 
-From the output, we can see that the service `iec-104` is running on port `2404`. But this only confirms that the service is running. In order to interact with it, we need to go through substations that are connected to the master.
+From the output, we can see that the service `iec-104` is running on port `2404`, which is the default port. But this only confirms that the service is running. In order to interact with it, we need to go through a master that is connected to the RTU.
 
->An Application Service Data Unit (ASDU) is a message wrapper that facilitates communication and the transmission of data points between a Remote Terminal Unit (RTU) and the master.  Each ASDU has a common address, known as an ASDU Common Address which is unique to each RTU.
+Each IEC-104 RTU has something known as an  Application Service Data Unit (ASDU) common address, which is its identity in relation to other RTUs and what masters will use to reach and communicate with it.
+
+>An Application Service Data Unit (ASDU) is a message wrapper that facilitates communication and the transmission of data points between a Remote Terminal Unit (RTU) and the master.  Each RTU has a common address, known as an ASDU Common Address which is unique to it.
 
 `nmap` has a neat script to discover these ASDU addresses, which is called `iec-identify.nse`. Let's utilize this:
 
 ```bash
-kali:~:% nmap 127.0.0.1 -Pn -p 2404 --script iec-identify.nse
-Starting Nmap 7.94 ( https://nmap.org ) at 2025-08-06 09:29 EDT
-Nmap scan report for localhost (127.0.0.1)
-Host is up (0.000065s latency).
+otuser@a8f0b6ff9c14:~$ nmap 172.30.0.2 -Pn -p 2404 --script iec-identify.nse
+Starting Nmap 7.80 ( https://nmap.org ) at 2026-01-04 07:34 UTC
+Nmap scan report for server.ot_net (172.30.0.2)
+Host is up (0.000072s latency).
 
 PORT     STATE SERVICE
 2404/tcp open  iec-104
@@ -92,10 +95,10 @@ PORT     STATE SERVICE
 |   ASDU address: 65535
 |_  Information objects: 3
 
-Nmap done: 1 IP address (1 host up) scanned in 0.28 seconds
+Nmap done: 1 IP address (1 host up) scanned in 0.21 seconds
 ```
 
-The output shows one ASDU address connected to the master, which is `7720` and will come in handy during further stages of the attack. Another notable observation is the number of information objects.
+The output shows one ASDU address associated with the master, which is `65535` and will come in handy during further stages of the attack. Another notable observation is the number of information objects.
 
 >An Information Object is a data point that is contained within an ASDU. Information Objects relay a variety of information from the master, for example, breaker status, sensor readings, etc. 
 
@@ -105,13 +108,29 @@ The output shows one ASDU address connected to the master, which is `7720` and w
 
 Let's conduct our second-stage reconnaissance, in which we will now focus on discovering the various Information Objects and their respective addresses to pick our targets for manipulation.
 
-While Metasploit comes with a handy module for this, we are going to rather rise above that script kiddie mindset to better understand the hierarchical structure of ASDUs, Information Objects, and Information Object Addresses (IOAs) in relation to the master. Let's start scripting!
+For us to manipulate a particular information object, we need to discover its respective Information Object Address (IOA), which is the identity of an information object connected to an RTU. A master will use this IOA to interact with that particular information object, which is a digital identity for something physical like a breaker, tank sensor, etc. 
 
 #### IOA Discovery Script
 
-Using the neat [lib60870-C](https://github.com/mz-automation/lib60870) library for, we can interact with our IEC-104 instance. You can find the build instructions on the GitHub page. Below is a script that I have written for IOA discovery:
+Using the neat [lib60870-C](https://github.com/mz-automation/lib60870) library, we can write a program to perform discovery and enumeration of the various information objects connected with the RTU. This is the same as running a General Interrogation command from a master, but why we are writing this script is because we are assuming that the attacker does not have access to the legitimate master connected to the RTU, so they are trying to use the compromised engineering workstation as a master.
 
 ```c
+/*
+ * Author: 4p0cryph0n
+ *
+ * This file is part of an educational OT/ICS laboratory for studying
+ * IEC 60870-5-104 attack vectors
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This software is provided for educational and defensive security
+ * research purposes only.
+ */
+
+
 #include "cs104_connection.h"
 #include "hal_thread.h"
 #include "hal_time.h"

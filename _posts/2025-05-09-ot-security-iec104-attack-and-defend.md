@@ -43,7 +43,7 @@ IEC 60870-5-104 remains widely deployed across energy and other OT environments 
 
 To simulate this attack to a near-accurate extent, I have created a lab which can be found at my [repository for OT Security projects](https://github.com/4p0cryph0n/otsec). It is constructed using Docker, and has the following components:
 
-- **IEC-104 RTU** - I have modified a well-known and well-built IEC-104 simulator project called [J60870](https://www.openmuc.org/iec-60870-5-104/download/) to contain features that real-world outstations (RTUs) have, such as Select-Before-Operate (SBO) control logic and real-time breaker state changes in order to better understand how these attacks may impact real-world RTUs.
+- **IEC-104 RTU** - I have modified a well-known and well-built IEC-104 simulator project called [J60870](https://www.openmuc.org/iec-60870-5-104/download/) to contain features that real-world outstations (RTUs) have, such as Select-Before-Operate (SBO) control logic and real-time breaker state changes in order to better understand how these attacks impact real-world RTUs.
 - **IEC-104 Master** - The master/client that comes with the J60870 simulator modified to support our RTU. This is present to understand the role of a master/SCADA server and how it communicates with an RTU by default.
 - **Engineering workstation** - An engineering workstation on the same network   as the IEC-104 RTU and master. This is an Ubuntu box assumed to be breached by the threat actor, where the attacks will launch from. We will get into how this falls in the overall attack flow later. This workstation also contains the [lib60870-C](https://github.com/mz-automation/lib60870) library to facilitate on-the-fly malware development.
 
@@ -58,7 +58,7 @@ Then I went ahead assigned IPs to each of these machines based on its subnet. Fe
 
 So the attack scenario is as follows:
 - We are simulating a threat actor that has breached an IEC-104 engineering workstation that resides on the same network as an IEC-104 outstation and master. 
-- The threat actor uses the engineering workstation as a rogue master, owing to the inherent trust of IEC-104 wherein multiple masters on the same network are able to communicate with an outstation (we assume that there aren't any security measures apart from network segmentation in place to prevent this kind of an attack).
+- The threat actor uses the engineering workstation as a rogue master, taking advantage of the inherent trust of IEC-104 wherein multiple masters on the same network are able to communicate with an outstation (we assume that there aren't any security measures apart from network segmentation in place to prevent this kind of an attack).
 
 ![](/assets/images/roguemaster.png)
 
@@ -310,4 +310,119 @@ Corresponding the results with the different types of information objects, we ca
 
 For a moment, lets step outside the attacker's shoes, and understand how IEC-104 really works on a technical level. Let's fire up the legitimate `client` container and understand how an IEC-104 handles requests.
 
-When you fire up the client, you will be presented with
+When you fire up the legitimate master, you will be presented with the following console:
+
+```bash
+2026.01.07 05:59:53.695 Send STARTDT (try 1)
+2026.01.07 05:59:53.698 Data transfer started
+2026.01.07 05:59:53.698 Successfully connected
+
+------------------------------------------------------
+ i - interrogation C_IC_NA_1
+ ci - counter interrogation C_CI_NA_1
+ c - synchronize clocks C_CS_NA_1
+ s - single command SELECT (SBO)
+ e - single command EXECUTE (SBO)
+ p - STOPDT act
+ t - STARTDT act
+ h - print help message
+ q - quit the application
+------------------------------------------------------
+
+** Enter action key: 
+```
+
+The script that we wrote basically sends out a General Interrogation command, or `i` in this case. You can see that it returns the same information:
+
+```sh
+** Enter action key: 
+i
+2026.01.07 07:27:39.952 ** Sending general interrogation
+
+** Enter action key: 
+2026.01.07 07:27:39.960 
+Received ASDU:
+ASDU Type: 100, C_IC_NA_1, Interrogation command
+Cause of transmission: ACTIVATION_CON, test: false, negative con: false
+Originator address: 0, Common address: 65535
+IOA: 0
+Qualifier of interrogation: 20
+2026.01.07 07:27:40.006 
+Received ASDU:
+ASDU Type: 1, M_SP_NA_1, Single-point information without time tag
+Cause of transmission: INTERROGATED_BY_STATION, test: false, negative con: false
+Originator address: 0, Common address: 65535
+IOA: 1001
+Single Point, is on: true, blocked: false, substituted: false, not topical: false, invalid: false
+IOA: 1002
+Single Point, is on: true, blocked: false, substituted: false, not topical: false, invalid: false
+IOA: 1003
+Single Point, is on: false, blocked: false, substituted: false, not topical: false, invalid: false
+2026.01.07 07:27:40.007 
+Received ASDU:
+ASDU Type: 100, C_IC_NA_1, Interrogation command
+Cause of transmission: ACTIVATION_TERMINATION, test: false, negative con: false
+Originator address: 0, Common address: 65535
+IOA: 0
+Qualifier of interrogation: 20
+```
+
+Now let's say for example we want to change the state of breaker 3 (`IOA: 1003`) from off (`0`) to on (`1`) . For that, a no-brainer would be to run the ` e - single command EXECUTE (SBO)` command right? So let's go ahead and do that:
+
+```sh
+** Enter action key: 
+e
+2026.01.07 07:47:43.758 Enter breaker IOA (e.g. 1001, 1002, 1003):
+1003
+2026.01.07 07:47:47.684 Enter state (1 = CLOSE / ON, 0 = OPEN / OFF):
+1
+2026.01.07 07:48:07.676 ** EXECUTE breaker IOA=1003 state=CLOSE
+
+** Enter action key: 
+2026.01.07 07:48:07.681 
+Received ASDU:
+ASDU Type: 45, C_SC_NA_1, Single command
+Cause of transmission: ACTIVATION_CON, test: false, negative con: false
+Originator address: 0, Common address: 65535
+IOA: 1003
+Single Command state on: true, selected: false, qualifier: 0
+```
+
+We see that the output reflects on state as true, so let's cross-check with a general interrogation:
+
+```sh
+i
+2026.01.07 07:49:17.860 ** Sending general interrogation
+
+** Enter action key: 
+2026.01.07 07:49:17.863 
+Received ASDU:
+ASDU Type: 100, C_IC_NA_1, Interrogation command
+Cause of transmission: ACTIVATION_CON, test: false, negative con: false
+Originator address: 0, Common address: 65535
+IOA: 0
+Qualifier of interrogation: 20
+2026.01.07 07:49:17.864 
+Received ASDU:
+ASDU Type: 1, M_SP_NA_1, Single-point information without time tag
+Cause of transmission: INTERROGATED_BY_STATION, test: false, negative con: false
+Originator address: 0, Common address: 65535
+IOA: 1001
+Single Point, is on: true, blocked: false, substituted: false, not topical: false, invalid: false
+IOA: 1002
+Single Point, is on: true, blocked: false, substituted: false, not topical: false, invalid: false
+IOA: 1003
+Single Point, is on: false, blocked: false, substituted: false, not topical: false, invalid: false
+2026.01.07 07:49:17.864 
+Received ASDU:
+ASDU Type: 100, C_IC_NA_1, Interrogation command
+Cause of transmission: ACTIVATION_TERMINATION, test: false, negative con: false
+Originator address: 0, Common address: 65535
+IOA: 0
+Qualifier of interrogation: 20
+```
+
+Huh? That's odd. The state of the breaker did not change. That is because we are missing a crucial command sequence which is implemented for safety in SCADA systems.
+#### Select-before-Operate (SBO)
+
+In order to prevent accidental 

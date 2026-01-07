@@ -278,6 +278,7 @@ In this script, I have accounted for the most common Information Object types, t
 | `M_ME_NB_1` | 11          | Measured Value, Scaled Integer    | Analog value represented as a scaled integer                    | Prints IOA + integer value                   |
 | `M_ME_NC_1` | 13          | Measured Value, Short Floating Pt | Analog value represented as 32-bit IEEE 754 float               | Prints IOA + float value                     |
 | **default** | —           | Unknown/Other                     | Any unhandled ASDU type                                         | Prints IOA + “Unparsed type”                 |
+
 The script can be compiled as such:
 ```sh
 otuser@a8004a5c456a:~$ gcc enum.c -o enum -I'/opt/lib60870/lib60870-C/src/hal/inc' -L '/opt/lib60870/lib60870-C/build/' /opt/lib60870/lib60870-C/build/src/liblib60870.a

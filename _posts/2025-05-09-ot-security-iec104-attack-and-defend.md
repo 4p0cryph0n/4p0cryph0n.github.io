@@ -308,7 +308,7 @@ Corresponding the results with the different types of information objects, we ca
 
 ### Taking a step back - Understanding how IEC-104 Works
 
-For a moment, lets step outside the attacker's shoes, and understand how IEC-104 really works on a technical level. Let's fire up the legitimate `client` container and understand how an IEC-104 handles requests.
+For a moment, lets step outside the attacker's shoes, and understand how IEC-104 really works on a technical level. Let's fire up the legitimate `client` container and understand how an IEC-104 RTU handles requests.
 
 When you fire up the legitimate master, you will be presented with the following console:
 

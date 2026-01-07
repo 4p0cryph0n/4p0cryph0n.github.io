@@ -60,6 +60,8 @@ So the attack scenario is as follows:
 - We are simulating a threat actor that has breached an IEC-104 engineering workstation that resides on the same network as an IEC-104 outstation and master. 
 - The threat actor uses the engineering workstation as a rogue master, owing to the inherent trust of IEC-104 wherein multiple masters on the same network are able to communicate with an outstation (we assume that there aren't any security measures apart from network segmentation in place to prevent this kind of an attack).
 
+![](/assets/images/roguemaster.png)
+
 ## Target Reconnaissance
 
 From the breached engineering machine, lets assume that the threat actor has already scanned the OT network and knows the IPs of the RTU and the connected master. The attacker is able to load `nmap` on the machine, and starts recon. First, let's scan all ports to figure out which port on the RTU is running the iec-104 service:
@@ -302,6 +304,10 @@ otuser@a8004a5c456a:~$ ./enum
 [-] Connection closed
 ```
 
-Corresponding the results with the different types of information objects, we can see that the type of the three outputted IOAs are `M_SP_NA_1`, which hold Single Point Information storing Boolean data. This could indicate that these information objects could be associated with breakers or switches.
+Corresponding the results with the different types of information objects, we can see that the type of the three outputted IOAs are `M_SP_NA_1`, which hold Single Point Information storing Boolean data. This could indicate that these information objects are associated with breakers or switches.
 
+### Taking a step back - Understanding how IEC-104 Works
 
+For a moment, lets step outside the attacker's shoes, and understand how IEC-104 really works on a technical level. Let's fire up the legitimate `client` container and understand how an IEC-104 handles requests.
+
+When you fire up the client, you will be presented with

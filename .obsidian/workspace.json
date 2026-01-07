@@ -148,6 +148,8 @@
   },
   "active": "bed1c50b5519a24c",
   "lastOpenFiles": [
+    "assets/images/roguemaster.png",
+    "assets/images/roguemaster (1).png",
     "_posts/2024-04-12-windows-malware-development-5.md",
     "_posts/2025-05-09-ot-security-iec104-attack-and-defend.md",
     "assets/images/mandiant_ot.png",
@@ -175,7 +177,6 @@
     "assets/images/vs4.png",
     "assets/images/vs3.png",
     "assets/images/vs2.png",
-    "assets/images/vs_Debug.png",
     "_posts/2023-05-27-windows-malware-development-3.md",
     "assets/signature.png.md",
     "_posts/2022-07-12-Malware-Analysis-Eternity-Stealer.md",
